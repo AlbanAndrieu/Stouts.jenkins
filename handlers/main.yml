@@ -2,6 +2,7 @@
 
 - name: jenkins restart
   service: name=jenkins state=restarted
+  when: jenkins_restart_enabled
   sudo: yes
   
 - name: jenkins check web ready
