@@ -92,6 +92,8 @@ jenkins_check_jobs:                         # Checking jobs during a provision
                                             #     - url: http://jenkins.project.com
                                             #       job: project-develop
 
+jenkins_restart_enabled: true # Must be deactivate when script is tested with Jenkins
+
 docker_files_generated_directory: "./"
 docker_files_enable: no
 docker_volume_directory                  : "{{ jenkins_home }}"
