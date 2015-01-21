@@ -78,3 +78,4 @@
 - name: jenkins-configure | Configure log rotation
   template: src=logrotate.conf.j2 dest=/etc/logrotate.d/jenkins.conf
   when: jenkins_logrotate
+
