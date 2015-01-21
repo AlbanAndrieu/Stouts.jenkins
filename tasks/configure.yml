@@ -1,16 +1,8 @@
 ---
 
-<<<<<<< HEAD
 - name: jenkins-configure | Ensure Jenkins is stopped
   service: name=jenkins state=stopped
   sudo: yes
-=======
-- name: jenkins-configure | Configure Jenkins Service
-  template:
-    dest: "{{ jenkins_configuration }}"
-    src: jenkins.j2
-  register: jenkins_service_configure
->>>>>>> Use jenkins_url everywhere
 
 - name: jenkins-configure | Create home folder
   file:
@@ -129,19 +121,11 @@
   sudo: yes
   when: not jenkins_service_configure.changed
 
-<<<<<<< HEAD
 - name: jenkins-configure | Wait untils Jenkins web API is available
-  shell: curl --head --silent http://{{ jenkins_http_host }}:{{ jenkins_http_port }}{{ jenkins_prefix }}/cli/
+  shell: curl --head --silent {{ jenkins_url }}/cli/
   until: (result.stdout.find("403 Forbidden") != -1) or (result.stdout.find("200 OK") != -1) and (result.stdout.find("Please wait while") == -1)
   retries: "{{ jenkins_connection_retries }}"
   delay: "{{ jenkins_connection_delay }}"
-=======
-- name: Wait untils Jenkins web API is available
-  shell: curl --head --silent {{ jenkins_url }}/cli/
-  delay: 10
-  retries: 12
-  until: result.stdout.find("200 OK") != -1
->>>>>>> Use jenkins_url everywhere
   register: result
   changed_when: False
   #when: jenkins_service_configure.changed and jenkins_restart_enabled
