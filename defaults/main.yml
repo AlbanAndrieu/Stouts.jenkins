@@ -36,3 +36,45 @@ jenkins_ssh_keys: []                        # Set multiple private keys from vau
 jenkins_ssh_fingerprints:                   # Set known hosts for ssh
   - "bitbucket.org,131.103.20.167 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAubiN81eDcafrgMeLzaFPsw2kNvEcqTKl/VqLat/MaB33pZy0y3rJZtnqwR2qOOvbwKZYKiEO1O6VqNEBxKvJJelCq0dTXWT5pbO2gDXC6h6QDXCaHo6pOHGPUy+YBaGQRGuSusMEASYiWunYN0vCAI8QaXnWMXNMdFP3jHAJH0eDsoiGnLPBlBp4TNm6rYI74nMzgz3B9IikW4WVK+dc8KZJZWYjAuORU3jc1c/NPskD2ASinf8v3xnfXeukU0sJ5N6m5E8VLjObPEO+mN2t/FZTMZLiFqPWc/ALSqnMnnhwrNi2rbfg/rd/IpL8Le3pSBne8+seeFVBoGqzHM9yXw=="
   - "github.com,204.232.175.90 ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAQEAq2A7hRGmdnm9tUDbO9IDSwBK6TbQa+PXYPCPy6rbTrTtw7PHkccKrpp0yVhp5HdEIcKr6pLlVDBfOLX9QUsyCOV0wzfjIJNlGEYsdlLJizHhbn2mUjvSAHQqZETYP81eFzLQNnPHt4EVVUh7VfDESU84KezmD5QlWpXLmvU31/yMf+Se8xhHTvKSCZIFImWwoG6mbUoWf9nzpIoaSjB+weqqUUmpaaasXVal72J+UX2B+2RPW3RcT0eOzQgqlJL3RKrTJvdsjE3JEAvGq3lGHSZXy28G3skua2SmVi/w4yCE6gbODqnTWlg7+wC604ydGXA8VJiS5ap43JXiUFFAaQ=="
+
+# System config
+# =============
+jenkins_system_config:
+  admin_email: nobody@example.com
+
+# Logging
+# =======
+jenkins_log: "{{ jenkins_logdir }}/{{ jenkins_name }}.log"
+jenkins_logdir: /var/log/jenkins            # Jenkins logs location
+jenkins_logrotate: yes                      # Rotate Jenkins logs.
+jenkins_logrotate_options:
+  - compress
+  - copytruncate
+  - daily
+  - dateext
+  - rotate 7
+  - size 10M
+
+jenkins_check_jobs:                         # Checking jobs during a provision
+                                            # Ensure the last build is success, before update
+                                            # Eg. jenkins_check_jobs:
+                                            #     - url: http://jenkins.project.com
+                                            #       job: project-develop
+
+jenkins_restart_enabled: true # Must be deactivate when script is tested with Jenkins
+
+jenkins_remote_enabled: no # Must be activate when jenkins is created from backup
+jenkins_remote_user: {{ jenkins_user }}
+jenkins_remote_ip: "127.0.0.1"
+jenkins_remote_path: {{ jenkins_home }}
+jenkins_remote_backup: /backup/jenkins/thinBackup/FULL*/
+jenkins_remote_rsa: "/home/vagrant/.ssh/id_rsa" # RSA key used when jenkins is created from backup
+jenkins_groovy_enabled: no # Must be activate when jenkins is created from backup
+jenkins_swarm_enabled: no # Must be activate when jenkins is created from backup
+jenkins_swarm_user: "nobody" # The user used to connect slave using swarm
+
+docker_files_generated_directory: "./"
+docker_files_enable: no
+docker_volume_directory                  : "{{ jenkins_home }}"
+docker_working_directory                 : "/home/vagrant"
+docker_image_name                        : "nabla/ansible-jenkins-master"
