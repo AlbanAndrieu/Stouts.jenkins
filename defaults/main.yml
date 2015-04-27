@@ -83,9 +83,18 @@ jenkins_check_jobs:                         # Checking jobs during a provision
 
 jenkins_restart_enabled: true # Must be deactivate when script is tested with Jenkins
 
+jenkins_remote_enabled: no # Must be activate when jenkins is created from backup
+jenkins_remote_user: {{ jenkins_user }}
+jenkins_remote_ip: "127.0.0.1"
+jenkins_remote_path: {{ jenkins_home }}
+jenkins_remote_backup: /backup/jenkins/thinBackup/FULL*/
+jenkins_remote_rsa: "/home/vagrant/.ssh/id_rsa" # RSA key used when jenkins is created from backup
+jenkins_groovy_enabled: no # Must be activate when jenkins is created from backup
+jenkins_swarm_enabled: no # Must be activate when jenkins is created from backup
+jenkins_swarm_user: "nobody" # The user used to connect slave using swarm
+
 docker_files_generated_directory: "./"
 docker_files_enable: no
 docker_volume_directory                  : "{{ jenkins_home }}"
 docker_working_directory                 : "/home/vagrant"
 docker_image_name                        : "nabla/ansible-jenkins-master"
-
