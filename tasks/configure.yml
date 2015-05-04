@@ -38,12 +38,12 @@
 - name: Enable swarm connect for anonymous
   shell: sed -i "s;<permission>hudson.model.Computer.Connect:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Computer.Connect:anonymous</permission>;g" {{ jenkins_home }}/config.xml
   when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled && jenkins_swarm_enabled
+  when: jenkins_remote_enabled and jenkins_swarm_enabled
 
 - name: Enable swarm create for anonymous
   shell: sed -i "s;<permission>hudson.model.Computer.Create:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Computer.Create:anonymous</permission>;g" {{ jenkins_home }}/config.xml
   when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled && jenkins_swarm_enabled
+  when: jenkins_remote_enabled and jenkins_swarm_enabled
 
 - name: Create {{ jenkins_home }} folder
   file: path={{ jenkins_home }} state=directory mode=0755 owner={{ jenkins_user }}
