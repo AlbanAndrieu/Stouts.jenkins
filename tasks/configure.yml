@@ -5,7 +5,11 @@
   sudo: yes
 
 - name: jenkins-configure | Create home folder
-  file: state=directory path={{ jenkins_home }} mode=0755 owner={{ jenkins_user }}
+  file:
+    mode: 0755
+    owner: "{{ jenkins_user }}"
+    path: "{{ jenkins_home }}"
+    state: directory
   sudo: yes
   ignore_errors: True
 
@@ -20,7 +24,9 @@
   when: jenkins_remote_enabled
 
 - name: jenkins-configure | Configure Jenkins service
-  template: src=jenkins.j2 dest={{jenkins_configuration}}
+  template:
+    dest: "{{jenkins_configuration}}"
+    src: jenkins.j2
   sudo: yes
   register: jenkins_service_configure
 
@@ -99,17 +105,21 @@
   sudo: yes
 
 - name: jenkins-configure | Ensure Jenkins restarted if needed
-  service: name=jenkins state=restarted
+  service:
+    name: jenkins
+    state: restarted
   changed_when: False
   sudo: yes
   #when: jenkins_service_configure.changed and jenkins_restart_enabled
   when: jenkins_restart_enabled
 
 - name: jenkins-configure | Ensure Jenkins running
-  service: name=jenkins state=started
+  service:
+    name: jenkins
+    state: started
   changed_when: False
-  when: not jenkins_service_configure.changed
   sudo: yes
+  when: not jenkins_service_configure.changed
 
 - name: jenkins-configure | Wait untils Jenkins web API is available
   shell: curl --head --silent http://{{ jenkins_http_host }}:{{ jenkins_http_port }}{{ jenkins_prefix }}/cli/
@@ -126,6 +136,7 @@
   register: jenkins_cli
   until: "'OK' in jenkins_cli.msg or 'file already exists' in jenkins_cli.msg"
   sudo: yes
+
   retries: 10
   delay: 10
   when: jenkins_restart_enabled
@@ -149,7 +160,7 @@
 - name: jenkins-configure | Configure Jenkins System
   template: src=jenkins_system_config.xml.j2 dest={{jenkins_home}}/jenkins.model.JenkinsLocationConfiguration.xml owner={{ jenkins_user }} group={{ jenkins_group }} force=yes
   sudo: yes
-  notify: [jenkins reload configuration]
+  notify: jenkins reload configuration
 
 - name: jenkins-configure | Configure log rotation
   template: src=logrotate.conf.j2 dest=/etc/logrotate.d/jenkins.conf
