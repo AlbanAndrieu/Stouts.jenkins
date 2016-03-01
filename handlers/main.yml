@@ -4,7 +4,7 @@
   service: name=jenkins state=restarted
   when: jenkins_restart_enabled
   become: yes
-  
+
 - name: jenkins check web ready
   wait_for: host="{{ jenkins_http_host }}" port="{{ jenkins_http_port }}" timeout=30
 
@@ -33,7 +33,7 @@
 - name: nginx reload
   service: name=nginx state=reloaded
   become: yes
-  
+
 - name: apache restart
   service: name=apache2 state=restarted
   become: yes

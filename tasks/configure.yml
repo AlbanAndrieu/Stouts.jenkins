@@ -1,9 +1,40 @@
 ---
 
+<<<<<<< f2c8aba1faf8fea8a0e22468c456d5a2f33bac6d
 - name: jenkins-configure | Configure Jenkins Service
   template:
     dest: "{{ jenkins_configuration }}"
     src: jenkins.j2
+=======
+- name: jenkins-configure | Ensure Jenkins is stopped
+  service: name=jenkins state=stopped
+  sudo: yes
+
+- name: jenkins-configure | Create home folder
+  file:
+    mode: 0755
+    owner: "{{ jenkins_user }}"
+    path: "{{ jenkins_home }}"
+    state: directory
+  sudo: yes
+  ignore_errors: True
+
+- name: jenkins-configure | Create {{ jenkins_home }} with full rights for vagrant
+  file: state=directory mode=0777 path={{ jenkins_home }} owner=vagrant group=vagrant
+  sudo: yes
+  when: jenkins_remote_enabled
+
+- name: jenkins-configure | Change permission for vagrant
+  file: path={{jenkins_home}} owner=vagrant group=vagrant recurse=yes
+  sudo: yes
+  when: jenkins_remote_enabled
+
+- name: jenkins-configure | Configure Jenkins service
+  template:
+    dest: "{{jenkins_configuration}}"
+    src: jenkins.j2
+  sudo: yes
+>>>>>>> Support ansible > 2.0
   register: jenkins_service_configure
 
 - name: jenkins-configure | Create home folder
@@ -42,6 +73,7 @@
   register: jenkins_cli
   until: "'OK' in jenkins_cli.msg or 'file already exists' in jenkins_cli.msg"
   sudo: yes
+
   retries: 10
   delay: 10
   when: jenkins_restart_enabled
