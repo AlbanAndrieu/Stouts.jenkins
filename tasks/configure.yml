@@ -26,13 +26,13 @@
 
 - name: jenkins-configure | Add Jenkins key for remote access
   authorized_key: user=vagrant key="{{ lookup('file', "../vagrant/keys/" + "mgr.jenkins.pub") }}"
-  delegate_to: "{{ remote_jenkins_delegated_ip }}"
+  delegate_to: "{{ jenkins_remote_delegated_ip }}"
 #  become: yes
 
 - name: jenkins-configure | Restore configuration from backup
   #synchronize: mode=pull src={{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_backup }} dest="{{ jenkins_home }}/" rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--compress
   command: rsync -lptgoD --rsh='ssh -i {{ jenkins_remote_rsa }}' {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_backup }}/* {{ jenkins_home }}/
-  delegate_to: "{{ remote_jenkins_delegated_ip }}"
+  delegate_to: "{{ jenkins_remote_delegated_ip }}"
 #TODO try become
 #  become: true
 #  become_method: sudo
@@ -43,19 +43,19 @@
 - name: jenkins-configure | Restore users from master
   #synchronize: mode=pull src="{{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/users/" dest={{ jenkins_home }}/users/ rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--recursive,--compress
   command: rsync -a --rsh='ssh -i {{ jenkins_remote_rsa }}' {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/users/ {{ jenkins_home }}/users/
-  delegate_to: "{{ remote_jenkins_delegated_ip }}"
+  delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
 
 - name: jenkins-configure | Restore jobs from master
   command: rsync -a --exclude 'builds' --rsh='ssh -i {{ jenkins_remote_rsa }}' {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/jobs/ /jenkins/jobs/
-  delegate_to: "{{ remote_jenkins_delegated_ip }}"
+  delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
 
 - name: jenkins-configure | Restore userContent from master
   command: rsync -a --rsh='ssh -i {{ jenkins_remote_rsa }}' {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:/jenkins/userContent/ /jenkins/userContent/
-  delegate_to: "{{ remote_jenkins_delegated_ip }}"
+  delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
 
@@ -93,7 +93,8 @@
   until: result.stdout.find("200 OK") != -1
   register: result
   changed_when: False
-  when: jenkins_service_configure.changed and jenkins_restart_enabled
+  #when: jenkins_service_configure.changed and jenkins_restart_enabled
+  when: jenkins_restart_enabled
 
 - name: jenkins-configure | Copy jenkins-cli
   get_url: url=http://{{ jenkins_http_host }}:{{ jenkins_http_port }}{{ jenkins_prefix }}/jnlpJars/jenkins-cli.jar dest={{ jenkins_home }}/jenkins-cli.jar
