@@ -8,10 +8,42 @@
   apt_repository: repo="{{ jenkins_apt_repository }}" update_cache=yes
   sudo: yes
 
+- name: jenkins-install | Create {{ jenkins_home }}
+  sudo: yes
+  file: state=directory mode=0755 path={{ jenkins_home }} owner={{ jenkins_user }} group={{jenkins_group}}
+  when: jenkins_deb_enable
+
+- name: jenkins-install | Test jenkins deb package exists
+  stat: path={{ jenkins_home }}/{{ jenkins_deb_file }}
+  sudo: yes
+  register: jenkins_dir
+  when: jenkins_deb_enable
+
+- name: jenkins-install | Download jenkins deb package
+  action: command wget -q -P {{ jenkins_home }} {{ jenkins_deb_repository }}
+  sudo: yes
+  #when: jenkins_dir.stat.exists is defined
+  when: jenkins_dir.stat.exists == False
+  when: jenkins_deb_enable
+
+- name: jenkins-install | Install java
+  apt: pkg={{ item }} state=present update_cache=yes
+  sudo: yes
+  with_items:
+   - openjdk-7-jre-headless
+   - daemon
+  when: jenkins_deb_enable
+
+- name: jenkins-install | Install jenkins
+  action: command dpkg -i {{ jenkins_home }}/jenkins_{{ jenkins_version }}_all.deb
+  sudo: yes
+  when: jenkins_deb_enable
+
 - name: jenkins-install | Install jenkins
   apt: pkg={{item}}
   with_items: [curl, jenkins]
   sudo: yes
+  when: not jenkins_deb_enable
 
 - name: jenkins-install | Install additional deb packages
   apt: pkg={{item}}
