@@ -10,9 +10,13 @@
     repo: "{{ jenkins_apt_repository }}"
     update_cache: yes
 
-- name: jenkins-install | Create {{ jenkins_home }}
+- name: jenkins-install | Create jenkins user
+  user: name={{ jenkins_user }} password={{ jenkins_password }} update_password=always comment="Jenkins user" home={{ jenkins_home }} shell={{ jenkins_shell }}
   sudo: yes
-  file: state=directory mode=0755 path={{ jenkins_home }} owner={{ jenkins_user }} group={{jenkins_group}}
+
+- name: jenkins-install | Create {{ jenkins_home }}
+  file: state=directory mode=0755 path={{ jenkins_home }} owner={{ jenkins_user }} group={{ jenkins_group} }
+  sudo: yes
   when: jenkins_deb_enable
 
 - name: jenkins-install | Test jenkins deb package exists
