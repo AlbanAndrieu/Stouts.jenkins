@@ -1,9 +1,15 @@
 ---
+
+- hosts: all
+  tasks:
+    - name: gather facts from db servers
+      setup:
+      delegate_to: "{{item}}"
+      delegate_facts: True
+      with_items: "{{groups['jenkins-master']}}"
+
 - hosts: all
   sudo: true
-  delegate_to: "{{item}}"
-  delegate_facts: True
-  with_items: "{{groups['jenkins-master']}}"
   roles:
     - { role: ./,
         docker_files_enable: yes,
