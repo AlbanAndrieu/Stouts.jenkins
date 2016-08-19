@@ -38,6 +38,11 @@
    - daemon
   when: jenkins_deb_enable
 
+- name: jenkins-configure | Configure Jenkins service
+  template: src=jenkins.j2 dest={{jenkins_configuration}}
+  sudo: yes
+  register: jenkins_service_configure
+
 - name: jenkins-install | Install jenkins
   action: command dpkg -i {{ jenkins_home }}/jenkins_{{ jenkins_version }}_all.deb
   sudo: yes
