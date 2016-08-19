@@ -174,3 +174,4 @@
   template: src=logrotate.conf.j2 dest=/etc/logrotate.d/jenkins.conf
   sudo: yes
   when: jenkins_logrotate
+
