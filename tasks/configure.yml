@@ -14,7 +14,7 @@
   sudo: yes
   when: jenkins_remote_enabled
 
-- name: jenkins-configure | Change permission.
+- name: jenkins-configure | Change permission for vagrant
   file: path={{jenkins_home}} owner=vagrant group=vagrant recurse=yes
   sudo: yes
   when: jenkins_remote_enabled
