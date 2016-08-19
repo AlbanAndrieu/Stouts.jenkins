@@ -34,7 +34,8 @@
   until: result.stdout.find("200 OK") != -1
   register: result
   changed_when: False
-  when: jenkins_service_configure.changed and jenkins_restart_enabled
+  #when: jenkins_service_configure.changed and jenkins_restart_enabled
+  when: jenkins_restart_enabled
 
 - name: jenkins-configure | Copy jenkins-cli
   get_url: url={{ jenkins_url }}/jnlpJars/jenkins-cli.jar dest={{ jenkins_home }}/jenkins-cli.jar
