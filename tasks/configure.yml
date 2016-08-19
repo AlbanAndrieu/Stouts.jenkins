@@ -24,9 +24,10 @@
   sudo: yes
   register: jenkins_service_configure
 
-- name: jenkins-configure | Add Jenkins key for remote access
-  authorized_key: user=vagrant key="{{ lookup('file', "../vagrant/keys/" + "mgr.jenkins.pub") }}"
+- name: jenkins-configure | Add Jenkins key for remote access using vagrant
+  authorized_key: user=vagrant key="{{ lookup('file', "{{ jenkins_remote_ssh_rsa }}") }}"
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
+  ignore_errors: True
 #  become: yes
 
 - name: jenkins-configure | Restore configuration from backup
