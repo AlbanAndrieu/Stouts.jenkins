@@ -98,56 +98,6 @@
   sudo: yes
   #when: jenkins_service_configure.changed
 
-- name: jenkins-configure | Remove Jenkins security init scripts after first startup.
-  file:
-    path: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
-    state: absent
-  sudo: yes
-
-- name: Restore configuration from backup
-  synchronize: src="{{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_backup }}" dest=/jenkins/ rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--recursive,--compress
-  when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled
-
-- name: Restore plugins from master
-  synchronize: src="{{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/plugins/" dest=/jenkins/plugins/ rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--recursive,--compress
-  when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled
-
-- name: Restore users from master
-  synchronize: src="{{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/users/" dest=/jenkins/users/ rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--recursive,--compress
-  when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled
-
-- name: Restore config from master
-  synchronize: src="{{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/config.xml" dest=/jenkins/ rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--compress
-  when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled
-
-- name: Enable groovy scripts
-  shell: sed -i "s;<permission>hudson.model.Hudson.RunScripts:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Hudson.RunScripts:anonymous</permission>;g" {{ jenkins_home }}/config.xml
-  when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled
-
-- name: Enable swarm connect for anonymous
-  shell: sed -i "s;<permission>hudson.model.Computer.Connect:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Computer.Connect:anonymous</permission>;g" {{ jenkins_home }}/config.xml
-  when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled && jenkins_swarm_enabled
-
-- name: Enable swarm create for anonymous
-  shell: sed -i "s;<permission>hudson.model.Computer.Create:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Computer.Create:anonymous</permission>;g" {{ jenkins_home }}/config.xml
-  when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled && jenkins_swarm_enabled
-
-- name: Create {{ jenkins_home }} folder
-  file: path={{ jenkins_home }} state=directory mode=0755 owner={{ jenkins_user }}
-  sudo: yes
-  ignore_errors: True
-
-- name: Set ownership on all {{ jenkins_home }} files
-  file: path={{ jenkins_home }} owner={{ jenkins_user }} group={{ jenkins_group }} state=directory recurse=true
-  sudo: yes
-
 - name: jenkins-configure | Ensure Jenkins restarted if needed
   service:
     name: jenkins
@@ -174,6 +124,12 @@
   changed_when: False
   #when: jenkins_service_configure.changed and jenkins_restart_enabled
   when: jenkins_restart_enabled
+
+- name: jenkins-configure | Remove Jenkins security init scripts after first startup.
+  file:
+    path: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
+    state: absent
+  sudo: yes
 
 - name: jenkins-configure | Copy jenkins-cli
   get_url: url={{ jenkins_url }}/jnlpJars/jenkins-cli.jar dest={{ jenkins_home }}/jenkins-cli.jar
