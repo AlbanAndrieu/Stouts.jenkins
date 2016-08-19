@@ -12,6 +12,9 @@ jenkins_group: jenkins
 #jenkins_shell: "/bin/false"
 jenkins_shell: "/bin/bash"
 jenkins_become_method: sudo
+=======
+#jenkins_shell: "/bin/false"
+jenkins_shell: "/bin/bash"
 jenkins_configuration: /etc/default/jenkins
 jenkins_home: /var/lib/jenkins              # Jenkins home location
 jenkins_root: /usr/share/jenkins            # Location of jenkins arch indep files
