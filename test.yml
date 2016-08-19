@@ -1,12 +1,16 @@
 ---
 - hosts: all
   sudo: true
+  delegate_to: "{{item}}"
+  delegate_facts: True
+  with_items: "{{groups['jenkins-master']}}"
   roles:
     - { role: ./,
         docker_files_enable: yes,
         jenkins_nginx_proxy: yes,
         jenkins_proxy_auth: yes,
-        jenkins_proxy_hostname: localhost
+        jenkins_proxy_hostname: localhost,
+        jenkins_disabled_plugins: [ 'versioncolumn', 'scm-sync-configuration', 'clamav', 'selenium', 'seleniumrc-plugin', 'selenium-builder', 'svnmerge', 'WebSVN2', 'svn-revert-plugin', 'subversion', 'ec2', 'scons', 'gearman-plugin', 'findbugs', 'checkstyle', 'pmd', 'clover', 'fitnesse' ]
       }
 
   vars:
