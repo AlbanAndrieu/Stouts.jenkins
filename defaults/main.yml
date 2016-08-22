@@ -12,7 +12,6 @@ jenkins_group: jenkins
 #jenkins_shell: "/bin/false"
 jenkins_shell: "/bin/bash"
 jenkins_become_method: sudo
-=======
 #jenkins_shell: "/bin/false"
 jenkins_shell: "/bin/bash"
 jenkins_configuration: /etc/default/jenkins
