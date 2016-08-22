@@ -77,14 +77,6 @@
     - ./files/RemoveAllNodes.groovy
   when: jenkins_groovy_enabled and jenkins_restart_enabled
 
-- name: jenkins-configure | Run groovy scripts
-  shell: java -jar {{ jenkins_home }}/jenkins-cli.jar -s http://{{jenkins_http_host}}:{{ jenkins_http_port }}{{ jenkins_prefix }} -i {{ jenkins_remote_rsa }} groovy {{ item }}
-  with_items:
-    - ../Groovy/DisableAllJobs.groovy
-    - ../Groovy/RemoveAllNodes.groovy
-  when: jenkins_groovy_enabled
-  when: jenkins_restart_enabled
-
 - name: jenkins-configure | Configure Jenkins System
   template: src=jenkins_system_config.xml.j2 dest={{ jenkins_home }}/jenkins.model.JenkinsLocationConfiguration.xml owner=jenkins group=jenkins force=yes
   notify: jenkins reload configuration
