@@ -7,6 +7,7 @@
     creates=/{{jenkins_home}}/updates/default.json
 
 - file: path={{jenkins_home}}/updates/default.json owner={{jenkins_user}} group={{jenkins_group}} mode=0755
+  become: true
 
 - name: jenkins-plugins | Install Jenkins plugins.
   command: java -jar {{jenkins_home}}/jenkins-cli.jar {{jenkins_cli_extra_opts}} -s {{jenkins_url}} install-plugin {{item}} creates={{jenkins_home}}/plugins/{{item}}.jpi
@@ -15,7 +16,7 @@
   become_method: '{{ jenkins_become_method }}'
   with_items: "{{jenkins_plugins}}"
   ignore_errors: yes
-  notify: 
+  notify:
   - jenkins check web ready
   - jenkins check cli ready
   - jenkins restart
