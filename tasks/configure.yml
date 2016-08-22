@@ -62,15 +62,15 @@
   delay: 10
 
 - name: jenkins-configure | Copy Groovy file to disable jobs
-  copy: src=./files/DisableAllJobs.groovy dest={{ jenkins_home }}/DisableAllJobs.groovy owner=vagrant group=vagrant mode=0644
+  copy: src=./files/DisableAllJobs.groovy dest={{ jenkins_home }}/DisableAllJobs.groovy mode=0644
   sudo: yes
 
 - name: jenkins-configure | Copy Groovy files to remove nodes
-  copy: src=./files/RemoveAllNodes.groovy dest={{ jenkins_home }}/RemoveAllNodes.groovy owner=vagrant group=vagrant mode=0644
+  copy: src=./files/RemoveAllNodes.groovy dest={{ jenkins_home }}/RemoveAllNodes.groovy mode=0644
   sudo: yes
 
 - name: jenkins-configure | Run groovy scripts
-  shell: java -jar {{ jenkins_home }}/jenkins-cli.jar -s http://{{jenkins_http_host}}:{{ jenkins_http_port }}{{ jenkins_prefix }} -i {{ jenkins_remote_rsa }} groovy {{ item }}
+  shell: java -jar {{ jenkins_home }}/jenkins-cli.jar -s {{ jenkins_url }} -i {{ jenkins_remote_rsa }} groovy {{ item }}
   sudo: yes
   with_items:
     - ./files/DisableAllJobs.groovy
