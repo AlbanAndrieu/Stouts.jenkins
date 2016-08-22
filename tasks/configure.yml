@@ -24,6 +24,18 @@
   sudo: yes
   register: jenkins_service_configure
 
+#- name: jenkins-configure | Modify variables in init file
+#  lineinfile:
+#    dest: "{{ jenkins_configuration }}"
+#    insertafter: '^{{ item.option }}='
+#    regexp: '^{{ item.option}}=\"\${{ item.option }} '
+#    line: '{{ item.option }}="${{ item.option }} {{ item.value }}"'
+#    state: present
+#  sudo: yes
+#  with_items:
+#      "{{ jenkins_init_changes }}"
+#  register: jenkins_init_prefix
+
 - name: jenkins-configure | Add Jenkins key for remote access using vagrant
   authorized_key: user=vagrant key="{{ lookup('file', "{{ jenkins_remote_ssh_rsa }}") }}"
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
@@ -80,6 +92,12 @@
   sudo: yes
   #when: jenkins_service_configure.changed
 
+- name: jenkins-configure | Remove Jenkins security init scripts after first startup.
+  file:
+    path: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
+    state: absent
+  sudo: yes
+
 - name: jenkins-configure | Ensure Jenkins restarted
   service: name=jenkins state=restarted
   changed_when: False
@@ -89,9 +107,9 @@
 
 - name: jenkins-configure | Wait untils Jenkins web API is available
   shell: curl --head --silent http://{{ jenkins_http_host }}:{{ jenkins_http_port }}{{ jenkins_prefix }}/cli/
-  delay: 20
-  retries: 12
-  until: result.stdout.find("200 OK") != -1
+  until: (result.stdout.find("403 Forbidden") != -1) or (result.stdout.find("200 OK") != -1) and (result.stdout.find("Please wait while") == -1)
+  retries: "{{ jenkins_connection_retries }}"
+  delay: "{{ jenkins_connection_delay }}"
   register: result
   changed_when: False
   #when: jenkins_service_configure.changed and jenkins_restart_enabled

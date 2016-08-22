@@ -62,11 +62,24 @@ jenkins_jobs: []                            # Simple manage Jenkins jobs
 
 jenkins_java: /usr/bin/java
 jenkins_java_args:
-  - "-Djava.awt.headless=true"
+  - "-Djava.awt.headless=true -Djenkins.install.runSetupWizard=false"
 jenkins_pidfile: /var/run/jenkins.pid
 jenkins_prefix: "/"
 jenkins_run_standalone: yes
 jenkins_war: "{{ jenkins_root }}/jenkins.war"
+
+jenkins_connection_delay: 20
+jenkins_connection_retries: 12
+
+jenkins_admin_username: admin
+jenkins_admin_password: admin
+jenkins_admin_password_file: ""
+
+#jenkins_init_changes:
+#  - option: "JENKINS_ARGS"
+#    value: "--prefix={{ jenkins_prefix }}"
+#  - option: "JENKINS_JAVA_OPTIONS"
+#    value: "{{ jenkins_java_args }}"
 
 # System config
 # =============
