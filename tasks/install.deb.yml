@@ -2,7 +2,7 @@
 
 - name: jenkins-install | Add apt key
   apt_key:
-    id: "{{jenkins_apt_key_id}}"
+    id: "{{ jenkins_apt_key_id }}"
     url: "{{ jenkins_apt_key }}"
 
 - name: jenkins-install | Add apt repo
@@ -15,7 +15,7 @@
   sudo: yes
 
 - name: jenkins-install | Create {{ jenkins_home }}
-  file: state=directory mode=0755 path={{ jenkins_home }} owner={{ jenkins_user }} group={{ jenkins_group} }
+  file: state=directory mode=0755 path={{ jenkins_home }} owner={{ jenkins_user }} group={{ jenkins_group }}
   sudo: yes
   when: jenkins_deb_enable
 
