@@ -28,8 +28,7 @@
 - name: jenkins-install | Download jenkins deb package
   action: command wget -q -P {{ jenkins_home }} {{ jenkins_deb_repository }}
   sudo: yes
-  #when: jenkins_dir.stat.exists is defined
-  when: jenkins_dir.stat.exists == False and jenkins_deb_enable
+  when: ( jenkins_dir.stat.exists == False ) and jenkins_deb_enable
 
 - name: jenkins-install | Install java
   apt: pkg={{ item }} state=present update_cache=yes
