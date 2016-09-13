@@ -52,7 +52,7 @@
   file:
     path: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
     state: absent
-  sudo: yes
+  become: yes
 
 - name: jenkins-configure | Copy jenkins-cli
   get_url: url={{ jenkins_url }}/jnlpJars/jenkins-cli.jar dest={{ jenkins_home }}/jenkins-cli.jar
@@ -62,19 +62,20 @@
   delay: 10
 
 - name: jenkins-configure | Copy Groovy file to disable jobs
-  copy: src=./files/DisableAllJobs.groovy dest={{ jenkins_home }}/DisableAllJobs.groovy mode=0644
-  sudo: yes
+  copy: src=./files/DisableAllJobs.groovy dest={{ jenkins_home }}/init.groovy.d/DisableAllJobs.groovy owner={{ jenkins_user }} group={{ jenkins_group }} mode=0644
+  become: yes
 
 - name: jenkins-configure | Copy Groovy files to remove nodes
-  copy: src=./files/RemoveAllNodes.groovy dest={{ jenkins_home }}/RemoveAllNodes.groovy mode=0644
-  sudo: yes
+  copy: src=./files/RemoveAllNodes.groovy dest={{ jenkins_home }}/init.groovy.d/RemoveAllNodes.groovy owner={{ jenkins_user }} group={{ jenkins_group }} mode=0644
+  become: yes
 
 - name: jenkins-configure | Run groovy scripts
-  shell: java -jar {{ jenkins_home }}/jenkins-cli.jar -s {{ jenkins_url }} -i {{ jenkins_remote_rsa }} groovy {{ item }}
-  sudo: yes
+  # -i {{ jenkins_remote_rsa }}
+  shell: java -jar {{ jenkins_home }}/jenkins-cli.jar -s {{ jenkins_url }} groovy {{ item }}
+  become: yes
   with_items:
-    - ./files/DisableAllJobs.groovy
-    - ./files/RemoveAllNodes.groovy
+    - "{{ jenkins_home }}/init.groovy.d/DisableAllJobs.groovy"
+    - "{{ jenkins_home }}/init.groovy.d/RemoveAllNodes.groovy"
   when: jenkins_groovy_enabled and jenkins_restart_enabled
 
 - name: jenkins-configure | Configure Jenkins System
@@ -84,4 +85,3 @@
 - name: jenkins-configure | Configure log rotation
   template: src=logrotate.conf.j2 dest=/etc/logrotate.d/jenkins.conf
   when: jenkins_logrotate
-

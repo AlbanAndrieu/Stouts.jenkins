@@ -12,10 +12,14 @@
   - proxy_http
   - rewrite
   - ssl
+  become: yes
+  tags: apache
 
 - name: Apache | Disable the default site
   action: command a2dissite 000-default
   ignore_errors: yes  
+  become: yes
+  tags: apache
       
 - name: Apache | Configure Apache
   lineinfile:
@@ -24,13 +28,19 @@
     regexp: "{{ item.regexp }}"
     state: present
   with_items: "{{apache_ports_configuration_items}}"
+  become: yes
+  tags: apache
   notify:
   - apache restart      
       
 - name: Apache | Compile Apache Jenkins configuration
   template: src=apache.conf.j2 dest=/etc/apache2/sites-available/jenkins.conf
+  become: yes  
+  tags: apache
 
 - name: Apache | Enable our Jenkins site
   action: command a2ensite jenkins
+  become: yes  
+  tags: apache
   notify:
   - apache restart
