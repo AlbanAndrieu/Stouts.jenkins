@@ -9,7 +9,7 @@ VAGRANT_BASE_PORT = "33"
 VAGRANT_SSH_PORT = "22" + VAGRANT_BASE_PORT
 VAGRANT_NETWORK_IP = "192.168.11." + VAGRANT_BASE_PORT
 
-Vagrant.configure("VAGRANTFILE_API_VERSION") do |config|
+Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
 
   # required to download the box if used for the first time
   # vagrant box add ubuntu14 https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-i386-vagrant-disk1.box
@@ -28,11 +28,17 @@ Vagrant.configure("VAGRANTFILE_API_VERSION") do |config|
 
     #master.vm.provision :shell, :path => "buildup.sh"
 
+	#See issue vagrant forward port 22 unable to force
+	#https://stackoverflow.com/questions/30669183/forwarding-the-ssh-port-fails-when-running-two-vagrant-instances-from-the-same-h
 	#master.vm.network "forwarded_port", guest: 22, host: 2222, id: "ssh", disabled: "true"
-	master.vm.network "forwarded_port", guest: 22, host: VAGRANT_SSH_PORT, auto_correct: true
+	master.vm.network "forwarded_port", guest: 22, host: VAGRANT_SSH_PORT, id: 'ssh', auto_correct: "true"
 	master.vm.network "forwarded_port", guest: 8380, host: 8380, auto_correct: true
 	master.vm.network "forwarded_port", guest: 33224, host: 33224, auto_correct: true
 	#master.vm.network "forwarded_port", guest: 3141, host: 3141, auto_correct: true
+
+    # Do not use a shared folder. We will fetch sources in other ways.
+    # This allows us (eventually) to export the VM and move it around.
+    master.vm.synced_folder ".", "/vagrant", disabled: true
 
     #config.ssh.private_key_path = "../keys/id_rsa"
     #config.ssh.forward_agent = true

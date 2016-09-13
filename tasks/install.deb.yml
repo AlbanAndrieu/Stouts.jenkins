@@ -1,5 +1,14 @@
 ---
 
+- name: jenkins-install | Ensure Jenkins is stopped
+  service: name=jenkins state=stopped
+  ignore_errors: true
+  become: yes
+
+- name: jenkins-install | Create jenkins user
+  user: name={{ jenkins_user }} password={{ jenkins_password }} update_password=always comment="Jenkins user" home={{ jenkins_home }} shell={{ jenkins_shell }}
+  become: yes
+
 - name: jenkins-install | Add apt key
   apt_key:
     id: "{{ jenkins_apt_key_id }}"
@@ -9,30 +18,27 @@
   apt_repository:
     repo: "{{ jenkins_apt_repository }}"
     update_cache: yes
-
-- name: jenkins-install | Create jenkins user
-  user: name={{ jenkins_user }} password={{ jenkins_password }} update_password=always comment="Jenkins user" home={{ jenkins_home }} shell={{ jenkins_shell }}
-  sudo: yes
+  become: yes
 
 - name: jenkins-install | Create {{ jenkins_home }}
   file: state=directory mode=0755 path={{ jenkins_home }} owner={{ jenkins_user }} group={{ jenkins_group }}
-  sudo: yes
+  become: yes
   when: jenkins_deb_enable
 
 - name: jenkins-install | Test jenkins deb package exists
   stat: path={{ jenkins_home }}/{{ jenkins_deb_file }}
-  sudo: yes
+  become: yes
   register: jenkins_dir
   when: jenkins_deb_enable
 
 - name: jenkins-install | Download jenkins deb package
   action: command wget -q -P {{ jenkins_home }} {{ jenkins_deb_repository }}
-  sudo: yes
+  become: yes
   when: jenkins_deb_enable and ( jenkins_dir.stat.exists == False )
 
 - name: jenkins-install | Install java
   apt: pkg={{ item }} state=present update_cache=yes
-  sudo: yes
+  become: yes
   with_items:
    - openjdk-7-jre-headless
    - daemon
@@ -40,24 +46,26 @@
 
 - name: jenkins-install | Install jenkins
   action: command dpkg -i {{ jenkins_home }}/jenkins_{{ jenkins_version }}_all.deb
-  sudo: yes
+  become: yes
   when: jenkins_deb_enable
 
 - name: jenkins-install | Install jenkins
   apt:
     name: "{{item}}"
   with_items: [curl, jenkins]
-  sudo: yes
+  become: yes
   when: not jenkins_deb_enable
 
 - name: jenkins-install | Install additional deb packages
   apt:
     name: "{{item}}"
+  become: yes
   with_items: "{{jenkins_apt_packages}}"
 
 - name: jenkins-install | Setup passlib
   apt:
     name: python-passlib
+  become: yes
   when: jenkins_proxy_auth
 
 # vim:sw=2

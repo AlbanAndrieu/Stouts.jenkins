@@ -5,14 +5,20 @@
   when: jenkins_restart_enabled
   become: yes
 
+- name: configure default users
+  template:
+    src: basic-security.groovy
+    dest: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
+  register: jenkins_users_config
+
 - name: jenkins check web ready
   wait_for: host="{{ jenkins_http_host }}" port="{{ jenkins_http_port }}" timeout=30
 
 - name: jenkins check cli ready
   shell: curl --head --silent {{ jenkins_url }}/cli/
-  delay: 10
-  retries: 12
-  until: result.stdout.find("200 OK") != -1
+  retries: "{{ jenkins_connection_retries }}"
+  delay: "{{ jenkins_connection_delay }}"
+  until: (result.stdout.find("403 Forbidden") != -1) or (result.stdout.find("200 OK") != -1) and (result.stdout.find("Please wait while") == -1)
   register: result
   changed_when: False
 
