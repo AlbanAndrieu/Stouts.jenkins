@@ -4,9 +4,9 @@ import jenkins.model.*
 
 def instance = Jenkins.getInstance()
 
-println "--> Checking if security has been set already"
+//println "--> Checking if security has been set already"
 
-if (!instance.isUseSecurity()) {
+//if (!instance.isUseSecurity()) {
     println "--> creating local user 'admin'"
 
     def hudsonRealm = new HudsonPrivateSecurityRealm(false)
@@ -16,4 +16,4 @@ if (!instance.isUseSecurity()) {
     def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
     instance.setAuthorizationStrategy(strategy)
     instance.save()
-}
+//}

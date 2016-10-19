@@ -27,6 +27,7 @@
     line: "{{ item.line }}"
     regexp: "{{ item.regexp }}"
     state: present
+#    validate: '/usr/sbin/apache2ctl -f %s -t'
   with_items: "{{apache_ports_configuration_items}}"
   become: yes
   tags: apache
