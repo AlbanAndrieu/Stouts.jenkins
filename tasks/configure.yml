@@ -4,7 +4,7 @@
   template:
     dest: "{{jenkins_configuration}}"
     src: jenkins.j2
-  sudo: yes
+  become: yes
   register: jenkins_service_configure
 
 - name: jenkins-configure | Create home folder
@@ -25,36 +25,33 @@
     mode: 0775
   become: yes
 
-- name: jenkins-configure | Enable groovy scripts
-  shell: sed -i "s;<permission>hudson.model.Hudson.RunScripts:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Hudson.RunScripts:anonymous</permission>;g" {{ jenkins_home }}/config.xml
-  #when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled
-
-- name: jenkins-configure | Enable swarm connect for anonymous
-  shell: sed -i "s;<permission>hudson.model.Computer.Connect:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Computer.Connect:anonymous</permission>;g" {{ jenkins_home }}/config.xml
-  #when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled and jenkins_swarm_enabled
-
-- name: jenkins-configure | Enable swarm create for anonymous
-  shell: sed -i "s;<permission>hudson.model.Computer.Create:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Computer.Create:anonymous</permission>;g" {{ jenkins_home }}/config.xml
-  #when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled and jenkins_swarm_enabled
+#- name: jenkins-configure | Enable groovy scripts
+#  shell: sed -i "s;<permission>hudson.model.Hudson.RunScripts:{{ jenkins_remote_username }}</permission>;<permission>hudson.model.Hudson.RunScripts:anonymous</permission>;g" {{ jenkins_home }}/config.xml
+#  when: jenkins_remote_enabled
+#
+#- name: jenkins-configure | Enable swarm connect for anonymous
+#  shell: sed -i "s;<permission>hudson.model.Computer.Connect:{{ jenkins_remote_username }}</permission>;<permission>hudson.model.Computer.Connect:anonymous</permission>;g" {{ jenkins_home }}/config.xml
+#  when: jenkins_remote_enabled and jenkins_swarm_enabled
+#
+#- name: jenkins-configure | Enable swarm create for anonymous
+#  shell: sed -i "s;<permission>hudson.model.Computer.Create:{{ jenkins_remote_username }}</permission>;<permission>hudson.model.Computer.Create:anonymous</permission>;g" {{ jenkins_home }}/config.xml
+#  when: jenkins_remote_enabled and jenkins_swarm_enabled
 
 #See https://wiki.jenkins-ci.org/display/JENKINS/Disable+security
 - name: jenkins-configure | Disable security (In case Crowd is enabled) step 1
   shell: sed -i "s;<useSecurity>true</useSecurity>;<useSecurity>false</useSecurity>;g" {{ jenkins_home }}/config.xml
   #when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled
+  when: jenkins_remote_enabled and not jenkins_crowd_enabled
 
 - name: jenkins-configure | Disable security (In case Crowd is enabled) step 2
   shell: sed -i "s;<securityRealm class=\"de.theit.jenkins.crowd.CrowdSecurityRealm\";<\!--<securityRealm class=\"de.theit.jenkins.crowd.CrowdSecurityRealm\";g" {{ jenkins_home }}/config.xml
   #when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled
+  when: jenkins_remote_enabled and not jenkins_crowd_enabled
 
 - name: jenkins-configure | Disable security (In case Crowd is enabled) step 3
   shell: sed -i "s;</securityRealm>;</securityRealm>-->;g" {{ jenkins_home }}/config.xml
   #when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled
+  when: jenkins_remote_enabled and not jenkins_crowd_enabled
 
 - name: jenkins-configure | Set ownership on all jenkins files
   file: path={{ jenkins_home }} owner={{ jenkins_user }} group={{ jenkins_group }} state=directory recurse=true
@@ -90,8 +87,13 @@
 
 - name: jenkins-configure | Remove Jenkins security init scripts after first startup.
   file:
-    path: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
+    path: "{{ item }}"
     state: absent
+  with_items:
+    - "{{ jenkins_home }}/init.groovy.d/01-basicSecurity.groovy"
+    - "{{ jenkins_home }}/init.groovy.d/10-deleteAllNodes.groovy"
+    - "{{ jenkins_home }}/init.groovy.d/11-disableAllJobs.groovy"
+    - "{{ jenkins_home }}/init.groovy.d/30-restorePlugins.groovy"
   become: yes
 
 - name: jenkins-configure | Copy jenkins-cli
@@ -103,22 +105,45 @@
   delay: 10
   when: jenkins_restart_enabled
 
-- name: jenkins-configure | Copy Groovy file to disable jobs
-  copy: src=./files/DisableAllJobs.groovy dest={{ jenkins_home }}/init.groovy.d/DisableAllJobs.groovy owner={{ jenkins_user }} group={{ jenkins_group }} mode=0644
-  become: yes
-
-- name: jenkins-configure | Copy Groovy files to remove nodes
-  copy: src=./files/RemoveAllNodes.groovy dest={{ jenkins_home }}/init.groovy.d/RemoveAllNodes.groovy owner={{ jenkins_user }} group={{ jenkins_group }} mode=0644
-  become: yes
-
-- name: jenkins-configure | Run groovy scripts
-  # -i {{ jenkins_remote_rsa }}
-  shell: java -jar {{ jenkins_home }}/jenkins-cli.jar -s {{ jenkins_url }} groovy {{ item }}
-  become: yes
+- name: jenkins-configure | Copy Groovy files to init.groovy.d (1)
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
   with_items:
-    - "{{ jenkins_home }}/init.groovy.d/DisableAllJobs.groovy"
-    - "{{ jenkins_home }}/init.groovy.d/RemoveAllNodes.groovy"
-  when: jenkins_groovy_enabled and jenkins_restart_enabled
+    - { src: '01-basicSecurity.groovy', dest: '{{ jenkins_home }}/init.groovy.d/01-basicSecurity.groovy' }
+#    - { src: '10-deleteAllNodes.groovy', dest: '{{ jenkins_home }}/init.groovy.d/10-deleteAllNodes.groovy' }
+#    - { src: '11-disableAllJobs.groovy', dest: '{{ jenkins_home }}/init.groovy.d/11-disableAllJobs.groovy' }
+    - { src: '13-changeAllJobsEmailNotifications.groovy', dest: '{{ jenkins_home }}/init.groovy.d/13-changeAllJobsEmailNotifications.groovy' }
+    - { src: '15-wipeoutWorkspace.groovy', dest: '{{ jenkins_home }}/init.groovy.d/15-wipeoutWorkspace.groovy' }
+    - { src: '20-tcpSlaveAgentPort.groovy', dest: '{{ jenkins_home }}/init.groovy.d/20-tcpSlaveAgentPort.groovy' }
+    - { src: '30-restorePlugins.groovy', dest: '{{ jenkins_home }}/init.groovy.d/30-restorePlugins.groovy' }
+    - { src: '40-EnableTimestamperPluginOnAllJobs.groovy', dest: '{{ jenkins_home }}/init.groovy.d/40-EnableTimestamperPluginOnAllJobs.groovy' }
+    - { src: '41-RemoveAllDisabledModulesInMavenJobs.groovy', dest: '{{ jenkins_home }}/init.groovy.d/41-RemoveAllDisabledModulesInMavenJobs.groovy' }
+    - { src: '42-PreselectUsernameInMavenReleaseBuild.groovy', dest: '{{ jenkins_home }}/init.groovy.d/42-PreselectUsernameInMavenReleaseBuild.groovy' }
+    - { src: '50-changeNexus.groovy', dest: '{{ jenkins_home }}/init.groovy.d/50-changeNexus.groovy' }
+    - { src: '51-changeSonar.groovy', dest: '{{ jenkins_home }}/init.groovy.d/51-changeSonar.groovy' }
+#    - { src: '52-changeJenkinsCredentials.groovy', dest: '{{ jenkins_home }}/init.groovy.d/52-changeJenkinsCredentials.groovy' }
+#    - { src: '53-changeJDKInstaller.groovy', dest: '{{ jenkins_home }}/init.groovy.d/53-changeJDKInstaller.groovy' }
+#    - { src: '54-addActiveDirectoryJenkinsCredentials.groovy', dest: '{{ jenkins_home }}/init.groovy.d/54-addActiveDirectoryJenkinsCredentials.groovy' }
+    - { src: '56-changeXvfb.groovy', dest: '{{ jenkins_home }}/init.groovy.d/56-changeXvfb.groovy' }
+    - { src: '60-changeMavenJobs.groovy', dest: '{{ jenkins_home }}/init.groovy.d/60-changeMavenJobs.groovy' }
+    - { src: '80-addSwarmUser.groovy', dest: '{{ jenkins_home }}/init.groovy.d/80-addSwarmUser.groovy' }
+  become: yes
+
+- name: jenkins-configure | Copy Groovy files to init.groovy.d (2)
+  copy: src={{ item }} dest={{ jenkins_home }}/init.groovy.d/ owner={{ jenkins_user }} group={{ jenkins_group }} mode=0644
+  with_fileglob:
+    - "*.groovy"
+  become: yes
+
+#- name: jenkins-configure | Run groovy scripts
+#  # -i {{ jenkins_remote_rsa }}
+#  shell: java -jar {{ jenkins_home }}/jenkins-cli.jar -s {{ jenkins_url }} groovy {{ item }}
+#  become: yes
+#  with_items:
+#    - "{{ jenkins_home }}/init.groovy.d/11-disableAllJobs.groovy"
+##    - "{{ jenkins_home }}/init.groovy.d/10-deleteAllNodes.groovy"
+#  when: jenkins_groovy_enabled and jenkins_restart_enabled
 
 - name: jenkins-configure | Configure Jenkins System
   template: src=jenkins_system_config.xml.j2 dest={{ jenkins_home }}/jenkins.model.JenkinsLocationConfiguration.xml owner={{ jenkins_user }} group={{ jenkins_group }} force=yes

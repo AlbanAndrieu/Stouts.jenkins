@@ -5,9 +5,17 @@
   ignore_errors: true
   become: yes
 
+- name: jenkins-install | Kill connection used by user jenkins
+  action: shell killall -u {{ jenkins_user }} || true
+  changed_when: false
+  become: yes
+  ignore_errors: true
+  when: jenkins_user != jenkins_target_user
+
 - name: jenkins-install | Create jenkins user
   user: name={{ jenkins_user }} password={{ jenkins_password }} update_password=always comment="Jenkins user" home={{ jenkins_home }} shell={{ jenkins_shell }}
   become: yes
+  ignore_errors: true
 
 - name: jenkins-install | Add apt key
   apt_key:
@@ -41,7 +49,21 @@
   become: yes
   with_items:
    - openjdk-7-jre-headless
+  when: jenkins_deb_enable and ansible_distribution_version not in ['16.04']
+
+- name: jenkins-install | Install java
+  apt: pkg={{ item }} state=present update_cache=yes
+  become: yes
+  with_items:
+   - openjdk-8-jre-headless
+  when: jenkins_deb_enable and ansible_distribution_version not in ['12.04', '14.04']
+
+- name: jenkins-install | Install daemon and net-tools
+  apt: pkg={{ item }} state=present update_cache=yes
+  become: yes
+  with_items:
    - daemon
+   - net-tools
   when: jenkins_deb_enable
 
 - name: jenkins-install | Install jenkins

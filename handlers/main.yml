@@ -7,8 +7,8 @@
 
 - name: configure default users
   template:
-    src: basic-security.groovy
-    dest: "{{ jenkins_home }}/init.groovy.d/basic-security.groovy"
+    src: 01-basicSecurity.groovy
+    dest: "{{ jenkins_home }}/init.groovy.d/01-basicSecurity.groovy"
   register: jenkins_users_config
 
 - name: jenkins check web ready

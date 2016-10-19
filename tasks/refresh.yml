@@ -2,7 +2,7 @@
 
 - name: jenkins-refresh | Ensure Jenkins is stopped
   service: name=jenkins state=stopped
-  sudo: yes
+  become: yes
 
 - name: jenkins-refresh | Create home folder
   file:
@@ -10,38 +10,23 @@
     owner: "{{ jenkins_user }}"
     path: "{{ jenkins_home }}"
     state: directory
-  sudo: yes
+  become: yes
   ignore_errors: true
 
-- name: jenkins-refresh | Create {{ jenkins_home }} with full rights for vagrant
-  file: state=directory mode=0777 path={{ jenkins_home }} owner=vagrant group=vagrant
-  sudo: yes
+- name: jenkins-refresh | Create {{ jenkins_home }} with full rights for {{ jenkins_target_user }}
+  file: state=directory mode=0755 path={{ jenkins_home }} owner={{ jenkins_target_user }} group={{ jenkins_target_group }}
+  become: yes
   when: jenkins_remote_enabled
 
-- name: jenkins-refresh | Change permission for vagrant
-  file: path={{jenkins_home}} owner=vagrant group=vagrant recurse=yes
-  sudo: yes
-  when: jenkins_remote_enabled
+- name: jenkins-refresh | Change permission for {{ jenkins_target_user }}
+  file: path={{jenkins_home}} owner={{ jenkins_target_user }} group={{ jenkins_target_group }} recurse=yes
+  become: yes
+  when: (jenkins_user != jenkins_target_user) and jenkins_remote_enabled
 
-# TODO Copies the key from the user who is running ansible to the remote machine user ubuntu
-#See buildup,sh
-#Needed for passwordless ssh kgr_mvn@risk-jenkins for rsync
-
-- name: jenkins-refresh | Add passwordless connection for kgr_mvn user
-  authorized_key: user=vagrant key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCyTZc0ySGrGc2Fkl0ZrNc5iour4+CfQBUjgCR7Cy7eyG2vwIJb1lHrzIRxrEusz9fF4aUE7cMO6HTkUsAGg0g0B6A42/vhWVYanZAl26z9kNbT80UrKgvw6T4hJ602Q4bFQ4ODqM/UGJh18Xk4Wsj3mRRvmIyQ7TokWVevYKLmc96RdMtRlB8nFxcGfcVS0FQuADxVQF55wn7857C6VzbihOpAwndVZZTIGjXmsLNrthhYMwJcDzN8fSdhfyb7mbYDIxz931XAZqxv+fDagvfsurCcpL4X4fSXFhF2dZMN21Qng9VaHxQg2psr7/PgOSE5sY4hMhcbpRAr72E6yjnZ mgr.jenkins"
-  delegate_to: "{{ jenkins_remote_delegated_ip }}"
-  sudo: yes
-  #ignore_errors: true
-
-#- name: jenkins-refresh | Add private key for remote access using vagrant
-#  copy: >
-#    src={{ jenkins_ssh_key_file }}
-#    dest={{ jenkins_remote_rsa }}
-#    owner=vagrant
-#    group=vagrant
-#    mode=0600
-#  when: jenkins_ssh_key_file != ""
-#  sudo: yes
+#- name: jenkins-refresh | Add passwordless connection for kgr_mvn user
+#  authorized_key: user={{ jenkins_target_user }} key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCyTZc0ySGrGc2Fkl0ZrNc5iour4+CfQBUjgCR7Cy7eyG2vwIJb1lHrzIRxrEusz9fF4aUE7cMO6HTkUsAGg0g0B6A42/vhWVYanZAl26z9kNbT80UrKgvw6T4hJ602Q4bFQ4ODqM/UGJh18Xk4Wsj3mRRvmIyQ7TokWVevYKLmc96RdMtRlB8nFxcGfcVS0FQuADxVQF55wn7857C6VzbihOpAwndVZZTIGjXmsLNrthhYMwJcDzN8fSdhfyb7mbYDIxz931XAZqxv+fDagvfsurCcpL4X4fSXFhF2dZMN21Qng9VaHxQg2psr7/PgOSE5sY4hMhcbpRAr72E6yjnZ mgr.jenkins"
+#  delegate_to: "{{ jenkins_remote_delegated_ip }}"
+#  become: yes
 
 - name: jenkins-refresh | Restore configuration from backup
   #synchronize: mode=pull src={{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_backup }} dest="{{ jenkins_home }}/" rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--compress
@@ -65,21 +50,35 @@
 
 - name: jenkins-refresh | Restore jobs from backup
   #--rsh='ssh -i {{ jenkins_remote_rsa }}'
-  command: rsync -a --exclude 'builds' {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/jobs/ /jenkins/jobs/
+  command: rsync -a --exclude 'builds' {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/jobs/ {{ jenkins_home }}/jobs/
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
 
 - name: jenkins-refresh | Restore userContent from master
   #--rsh='ssh -i {{ jenkins_remote_rsa }}'
-  command: rsync -a {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:/jenkins/userContent/ /jenkins/userContent/
+  command: rsync -a {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/userContent/ {{ jenkins_home }}/userContent/
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
 
 - name: jenkins-refresh | Restore plugin from master
   #--rsh='ssh -i {{ jenkins_remote_rsa }}'
-  command: rsync -a {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:/jenkins/plugins/ /jenkins/plugins/
+  command: rsync -a {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/plugins/ {{ jenkins_home }}/plugins/
+  delegate_to: "{{ jenkins_remote_delegated_ip }}"
+  #when: jenkins_service_configure.changed
+  when: jenkins_remote_enabled and jenkins_remote_plugin_enabled
+
+- name: jenkins-refresh | Restore email-templates from master
+  #--rsh='ssh -i {{ jenkins_remote_rsa }}'
+  command: rsync -a {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/email-templates/ {{ jenkins_home }}/email-templates/
+  delegate_to: "{{ jenkins_remote_delegated_ip }}"
+  #when: jenkins_service_configure.changed
+  when: jenkins_remote_enabled
+
+- name: jenkins-refresh | Restore secrets from master
+  #--rsh='ssh -i {{ jenkins_remote_rsa }}'
+  command: rsync -a {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/secrets/ {{ jenkins_home }}/secrets/
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled

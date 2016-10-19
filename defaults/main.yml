@@ -1,7 +1,7 @@
 ---
 
 jenkins_enabled: yes                        # The role is enabled
-jenkins_version: 2.7.2
+jenkins_version: 2.7.4
 jenkins_name: jenkins
 jenkins_user: jenkins
 # python -c 'import crypt; print crypt.crypt("This is my Password", "jenkins")'
@@ -22,7 +22,8 @@ jenkins_prefix: "/"
 jenkins_url: "http://{{ jenkins_http_host }}:{{ jenkins_http_port }}{{jenkins_prefix}}"
 jenkins_cli_extra_opts: ""                  # Extra options for jenkins-cli.jar
 
-jenkins_ssh_key_file: ""                    # Set private ssh key for Jenkins user (path to local file)
+jenkins_ssh_key_file: ""                    # Set private ssh key for Jenkins user (path to local file) for instance ~/.ssh/id_rsa
+jenkins_ssh_authorized_keys_fingerprints: [] # Set known authorized keys for ssh
 # Jenkins ssh keys object
 # - file_name: id_rsa  # optional defaults to id_rsa; please set if you have multiple
 #   private_key: |
@@ -58,7 +59,7 @@ jenkins_apt_repository: deb http://pkg.jenkins-ci.org/debian-stable binary/
 jenkins_deb_enable: yes                    # Use downloaded deb package instead of the one from apt
 jenkins_deb_file: "jenkins_{{ jenkins_version }}_all.deb"
 jenkins_deb_repository: "http://pkg.jenkins-ci.org/debian-stable/binary/jenkins_{{ jenkins_version }}_all.deb"
-#jenkins_deb_repository: "http://todo/download/{{ jenkins_deb_file }}"
+#jenkins_deb_repository: "http://mirror/download/{{ jenkins_deb_file }}"
 
 jenkins_apt_packages: []                    # Ensure the packages installed
 jenkins_plugins: []                         # Ensure the plugins is installed
@@ -114,6 +115,7 @@ jenkins_check_jobs:                         # Checking jobs during a provision
 jenkins_restart_enabled: true # Must be deactivate when script is tested with Jenkins
 
 jenkins_remote_enabled: no # Must be activate when jenkins is created from backup
+jenkins_remote_plugin_enabled: yes # Must be activate when plugin are retroived from remote jenkins (Otherwise groovy script can take plugins from thinBackup installedPlugins.xml)
 jenkins_remote_user: "{{ jenkins_user }}"
 jenkins_remote_ip: "127.0.0.1"
 jenkins_remote_path: "{{ jenkins_home }}"
@@ -123,11 +125,39 @@ jenkins_remote_ssh_rsa: "~/.ssh/id_rsa.pub" # Set private ssh RSA key for root u
 jenkins_remote_rsa: "{{ jenkins_remote_ssh_rsa }}" # RSA key used when jenkins is created from backup
 jenkins_groovy_enabled: no # Must be activate when jenkins is created from backup
 jenkins_swarm_enabled: no # Must be activate when jenkins is created from backup
-jenkins_swarm_user: "nobody" # The user used to connect slave using swarm
+jenkins_remote_username: admin # The user used to connect slave using swarm
+jenkins_remote_password: admin # The password used to connect slave using swarm
+jenkins_remote_email: "{{ jenkins_remote_username }}@example.com"
 jenkins_remote_delegated_ip: 127.0.0.1
+jenkins_remote_email_notifications: "{{ jenkins_remote_email }}"
+jenkins_remote_agent_port: 33224
+jenkins_remote_sonar_name: "sonar"
+jenkins_remote_sonar_server_old: "localhost"
+jenkins_remote_sonar_url_old: "http://{{ jenkins_remote_sonar_server_old }}"
+jenkins_remote_sonar_server_new: "localhost"
+jenkins_remote_sonar_url_new: "http://{{ jenkins_remote_sonar_server_new }}"
+jenkins_remote_sonar_jdbc: "jdbc:mysql://{{ jenkins_remote_sonar_server_new }}:3306/sonar"
+jenkins_remote_active_directory_credentials: "ac-credentials.json"
+jenkins_remote_stash_name: ""
+jenkins_remote_stash_server: "localhost"
+jenkins_remote_stash_url: "https://{{ jenkins_remote_stash_server }}"
+jenkins_remote_nexus_server_old: "localhost"
+jenkins_remote_nexus_url_old: "http://{{ jenkins_remote_nexus_server_old }}"
+jenkins_remote_nexus_server_new: "localhost"
+jenkins_remote_nexus_url_new: "http://{{ jenkins_remote_nexus_server_new }}"
+jenkins_remote_homemade_snapshot_url: "http://{{ jenkins_remote_nexus_server_new }}/maven/content/repositories/homemade-snapshot/"
+jenkins_remote_installed_plugin: "installedPlugins.xml" # From thinbackup
+jenkins_remote_xvbf_name: "default"
+
+jenkins_target_user: "{{ jenkins_user }}" #Switch to vagrant for virtualbox test boxes
+jenkins_target_group: "{{ jenkins_group }}" #Switch to vagrant for virtualbox test boxes
+
+jenkins_crowd_enabled: false
 
 docker_files_generated_directory: "./"
 docker_files_enable: no
 docker_volume_directory                  : "{{ jenkins_home }}"
 docker_working_directory                 : "/home/vagrant"
 docker_image_name                        : "nabla/ansible-jenkins-master"
+
+# vim:sw=2
