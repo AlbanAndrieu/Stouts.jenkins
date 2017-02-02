@@ -14,6 +14,8 @@ def instance = Jenkins.getInstance()
     instance.setSecurityRealm(hudsonRealm)
 
     def strategy = new FullControlOnceLoggedInAuthorizationStrategy()
+    //def strategy = new GlobalMatrixAuthorizationStrategy()
+    //strategy.add(Jenkins.ADMINISTER, "admin")
     instance.setAuthorizationStrategy(strategy)
     instance.save()
 //}

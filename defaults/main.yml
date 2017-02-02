@@ -122,7 +122,7 @@ jenkins_remote_path: "{{ jenkins_home }}"
 jenkins_remote_backup: "/backup/jenkins/thinBackup/FULL-*/"
 jenkins_remote_ssh_rsa: "~/.ssh/id_rsa.pub" # Set private ssh RSA key for root user (path to local file)
 #jenkins_remote_rsa: "/home/vagrant/.ssh/id_rsa"
-jenkins_remote_rsa: "{{ jenkins_remote_ssh_rsa }}" # RSA key used when jenkins is created from backup
+jenkins_remote_rsa: "/home/vagrant/.ssh/id_rsa" # RSA key used when jenkins is created from backup
 jenkins_groovy_enabled: no # Must be activate when jenkins is created from backup
 jenkins_swarm_enabled: no # Must be activate when jenkins is created from backup
 jenkins_remote_username: admin # The user used to connect slave using swarm
@@ -151,6 +151,7 @@ jenkins_remote_xvbf_name: "default"
 
 jenkins_target_user: "{{ jenkins_user }}" #Switch to vagrant for virtualbox test boxes
 jenkins_target_group: "{{ jenkins_group }}" #Switch to vagrant for virtualbox test boxes
+jenkins_target_home: "/home/{{jenkins_target_user}}"
 
 jenkins_crowd_enabled: false
 

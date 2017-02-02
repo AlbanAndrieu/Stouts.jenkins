@@ -2,7 +2,7 @@
 
 - name: jenkins-configure | Configure Jenkins service
   template:
-    dest: "{{jenkins_configuration}}"
+    dest: "{{ jenkins_configuration }}"
     src: jenkins.j2
   become: yes
   register: jenkins_service_configure
@@ -116,7 +116,7 @@
     - { src: '13-changeAllJobsEmailNotifications.groovy', dest: '{{ jenkins_home }}/init.groovy.d/13-changeAllJobsEmailNotifications.groovy' }
     - { src: '15-wipeoutWorkspace.groovy', dest: '{{ jenkins_home }}/init.groovy.d/15-wipeoutWorkspace.groovy' }
     - { src: '20-tcpSlaveAgentPort.groovy', dest: '{{ jenkins_home }}/init.groovy.d/20-tcpSlaveAgentPort.groovy' }
-    - { src: '30-restorePlugins.groovy', dest: '{{ jenkins_home }}/init.groovy.d/30-restorePlugins.groovy' }
+    - { src: '30-restorePlugins.groovy', dest: '{{ jenkins_home }}/init.groovy.d/30-restorePlugins.groovy-TODO' }
     - { src: '40-EnableTimestamperPluginOnAllJobs.groovy', dest: '{{ jenkins_home }}/init.groovy.d/40-EnableTimestamperPluginOnAllJobs.groovy' }
     - { src: '41-RemoveAllDisabledModulesInMavenJobs.groovy', dest: '{{ jenkins_home }}/init.groovy.d/41-RemoveAllDisabledModulesInMavenJobs.groovy' }
     - { src: '42-PreselectUsernameInMavenReleaseBuild.groovy', dest: '{{ jenkins_home }}/init.groovy.d/42-PreselectUsernameInMavenReleaseBuild.groovy' }

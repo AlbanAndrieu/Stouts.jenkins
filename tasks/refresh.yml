@@ -23,10 +23,23 @@
   become: yes
   when: (jenkins_user != jenkins_target_user) and jenkins_remote_enabled
 
-#- name: jenkins-refresh | Add passwordless connection for kgr_mvn user
-#  authorized_key: user={{ jenkins_target_user }} key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCyTZc0ySGrGc2Fkl0ZrNc5iour4+CfQBUjgCR7Cy7eyG2vwIJb1lHrzIRxrEusz9fF4aUE7cMO6HTkUsAGg0g0B6A42/vhWVYanZAl26z9kNbT80UrKgvw6T4hJ602Q4bFQ4ODqM/UGJh18Xk4Wsj3mRRvmIyQ7TokWVevYKLmc96RdMtRlB8nFxcGfcVS0FQuADxVQF55wn7857C6VzbihOpAwndVZZTIGjXmsLNrthhYMwJcDzN8fSdhfyb7mbYDIxz931XAZqxv+fDagvfsurCcpL4X4fSXFhF2dZMN21Qng9VaHxQg2psr7/PgOSE5sY4hMhcbpRAr72E6yjnZ mgr.jenkins"
+
+#BELOW is  done by hand for security reason
+#TODO replace ssh-rsa hard code by jenkins_ssh_authorized_keys_fingerprints
+#- name: jenkins-refresh | Add passwordless connection for remote user
+#  authorized_key: user={{ jenkins_remote_user }} key="ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQCyTZc0ySGrGc2Fkl0ZrNc5iour4+CfQBUjgCR7Cy7eyG2vwIJb1lHrzIRxrEusz9fF4aUE7cMO6HTkUsAGg0g0B6A42/vhWVYanZAl26z9kNbT80UrKgvw6T4hJ602Q4bFQ4ODqM/UGJh18Xk4Wsj3mRRvmIyQ7TokWVevYKLmc96RdMtRlB8nFxcGfcVS0FQuADxVQF55wn7857C6VzbihOpAwndVZZTIGjXmsLNrthhYMwJcDzN8fSdhfyb7mbYDIxz931XAZqxv+fDagvfsurCcpL4X4fSXFhF2dZMN21Qng9VaHxQg2psr7/PgOSE5sY4hMhcbpRAr72E6yjnZ mgr.jenkins"
 #  delegate_to: "{{ jenkins_remote_delegated_ip }}"
 #  become: yes
+
+- name: jenkins-refresh | jenkins-ssh from file| Copy private key
+  copy: >
+    src={{jenkins_ssh_key_file}}
+    dest={{jenkins_target_home}}/.ssh/id_rsa
+    owner={{jenkins_target_user}}
+    group={{jenkins_target_group}}
+    mode=0600
+  when: jenkins_ssh_key_file != ""
+  become: yes
 
 - name: jenkins-refresh | Restore configuration from backup
   #synchronize: mode=pull src={{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_backup }} dest="{{ jenkins_home }}/" rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--compress
