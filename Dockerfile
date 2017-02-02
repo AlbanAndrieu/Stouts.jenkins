@@ -45,7 +45,7 @@ RUN ls -lrta $WORKDIR/roles/*
 # there are a limited number of RUNs
 # allowed.
 ADD hosts /etc/ansible/hosts
-ADD jenkins-master.yml $WORKDIR/AlbanAndrieu/Stouts.jenkins/jenkins-master.yml
+ADD jenkins-master.yml $WORKDIR/jenkins-master.yml
 
 # Install ansible
 RUN apt-get install -y python-dev python-yaml python-jinja2 git unzip python-pip
@@ -64,7 +64,7 @@ RUN pip install paramiko PyYAML jinja2 httplib2 boto && pip install ansible
 # Execute
 RUN         pwd
 RUN         ls -lrta
-RUN         ansible-playbook $WORKDIR/AlbanAndrieu/Stouts.jenkins/jenkins-master.yml -c local -vvvv
+RUN         ansible-playbook $WORKDIR/jenkins-master.yml -c local -vvvv
 
 # Install a basic SSH server
 RUN apt-get install -y openssh-server

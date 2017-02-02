@@ -30,15 +30,26 @@ echo "###################"
 #ssh-keygen -f "/home/jenkins/.ssh/known_hosts" -R [10.21.22.69]:2233
 echo "###################"
 echo "Refresh and start Jenkins"
+
+echo "Switch to python 2.7 and ansible 2.1.1"
+#scl enable python27 bash
+#Enable python 2.7 and switch to ansible 2.1.1
+source /opt/rh/python27/enable
+python --version
 ansible --version
+
 echo "WORKSPACE : ${WORKSPACE}"
 cd ${WORKSPACE}/Scripts/ansible/
+
+# install roles
+ansible-galaxy install -r requirements.yml -p ./roles/ --ignore-errors
+
 sleep 30
 export ANSIBLE_REMOTE_USER=vagrant
 export ANSIBLE_PRIVATE_KEY_FILE=$HOME/.vagrant.d/insecure_private_key
 ssh-add $ANSIBLE_PRIVATE_KEY_FILE
 ansible -m setup master -i hosts --user=vagrant -vvvv
-ansible-playbook jenkins-UAT.yml -i hosts -vvvv || exit 1
+ansible-playbook jenkins-UAT.yml -i hosts --limit master -vvvv || exit 1
 echo "Connecting to master"
 #vagrant ssh-config
 #ssh -p 2233 vagrant@10.21.22.69 "echo \"DONE\""
