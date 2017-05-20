@@ -49,7 +49,7 @@
   become: yes
   with_items:
    - openjdk-7-jre-headless
-  when: jenkins_deb_enable and ansible_distribution_version not in ['16.04']
+  when: jenkins_deb_enable and ansible_distribution_version in ['12.04', '14.04']
 
 - name: jenkins-install | Install java
   apt: pkg={{ item }} state=present update_cache=yes
