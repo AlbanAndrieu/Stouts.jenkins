@@ -1,0 +1,41 @@
+---
+
+- name: jenkins-install | Ensure Jenkins is stopped
+  service: name=jenkins state=stopped
+  ignore_errors: true
+  become: yes
+  #when: ansible_os_family != 'Darwin'
+
+- name: jenkins-install | Kill connection used by user jenkins
+  action: shell killall -u {{ jenkins_user }} || true
+  changed_when: false
+  become: yes
+  ignore_errors: true
+  when: jenkins_user != jenkins_target_user
+  
+- name: jenkins-install | Create a docker group
+  group: 
+      name=docker 
+      state=present
+  become: yes
+  
+- name: jenkins-install | Add user(s) to docker group
+  user: 
+      name={{ item }} 
+      group=docker 
+      state=present
+  with_items: docker_users
+  when: docker_users is defined
+  become: yes
+
+- name: jenkins-install | Create a jenkins group
+  group: 
+      name=jenkins 
+      state=present
+  become: yes
+    
+- name: jenkins-install | Create jenkins user
+  user: name={{ jenkins_user }} password={{ jenkins_password }} update_password=always comment="Jenkins user" home={{ jenkins_home }} shell={{ jenkins_shell }} home={{ jenkins_home }} shell={{ jenkins_shell }} groups={{ jenkins_group }}
+  become: yes
+  ignore_errors: true
+  
