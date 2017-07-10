@@ -16,13 +16,13 @@
 - name: jenkins-refresh | Create {{ jenkins_home }} with full rights for {{ jenkins_target_user }}
   file: state=directory mode=0755 path={{ jenkins_home }} owner={{ jenkins_target_user }} group={{ jenkins_target_group }}
   become: yes
+  ignore_errors: true  
   when: jenkins_remote_enabled
 
 - name: jenkins-refresh | Change permission for {{ jenkins_target_user }}
   file: path={{jenkins_home}} owner={{ jenkins_target_user }} group={{ jenkins_target_group }} recurse=yes
   become: yes
   when: (jenkins_user != jenkins_target_user) and jenkins_remote_enabled
-
 
 #BELOW is  done by hand for security reason
 #TODO replace ssh-rsa hard code by jenkins_ssh_authorized_keys_fingerprints
@@ -57,6 +57,7 @@
 #  become_user: jenkins
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
+  become: yes
 
 - name: jenkins-refresh | Restore users from backup
   #synchronize: mode=pull src="{{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/users/" dest={{ jenkins_home }}/users/ rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--recursive,--compress
@@ -65,6 +66,7 @@
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
+  become: yes
 
 - name: jenkins-refresh | Restore jobs from backup
   #--rsh='ssh -i {{ jenkins_remote_rsa }}'
@@ -72,6 +74,7 @@
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
+  become: yes
 
 - name: jenkins-refresh | Restore userContent from master
   #--rsh='ssh -i {{ jenkins_remote_rsa }}'
@@ -79,6 +82,7 @@
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
+  become: yes
 
 - name: jenkins-refresh | Restore plugin from master
   #--rsh='ssh -i {{ jenkins_remote_rsa }}'
@@ -86,6 +90,7 @@
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled and jenkins_remote_plugin_enabled
+  become: yes
 
 - name: jenkins-refresh | Restore email-templates from master
   #--rsh='ssh -i {{ jenkins_remote_rsa }}'
@@ -93,6 +98,7 @@
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
+  become: yes
 
 - name: jenkins-refresh | Restore secrets from master
   #--rsh='ssh -i {{ jenkins_remote_rsa }}'
@@ -100,3 +106,4 @@
   delegate_to: "{{ jenkins_remote_delegated_ip }}"
   #when: jenkins_service_configure.changed
   when: jenkins_remote_enabled
+  become: yes

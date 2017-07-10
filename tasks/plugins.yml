@@ -1,6 +1,7 @@
 ---
 
 - file: path={{jenkins_home}}/updates owner={{jenkins_user}} group={{jenkins_group}} mode=0755 state=directory
+  become: yes
 
 - name: jenkins-plugins | Update Jenkins plugin data.
   shell: curl -L http://updates.jenkins-ci.org/update-center.json | sed '1d;$d' > /{{jenkins_home}}/updates/default.json

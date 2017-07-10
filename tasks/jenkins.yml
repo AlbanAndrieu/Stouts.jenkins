@@ -1,19 +1,30 @@
 ---
 
+- include: user.yml
+  become: true
+  tags: [jenkins, jenkins-install]
+
 - include: install.deb.yml
   become: true
   when: ansible_os_family == 'Debian'
   tags: [jenkins, jenkins-install]
+
+- include: install.pkg.yml
+  become: true
+  when: ansible_os_family == 'Darwin'
+  tags: [jenkins, jenkins-install]  
 
 - include: ssh.yml
   become: true
   tags: [jenkins, jenkins-ssh]
 
 - include: refresh.yml
+  when: ansible_os_family != 'Darwin'  
   tags: [jenkins, jenkins-configure]
 
 - include: configure.yml
   become: true
+#  when: ansible_os_family != 'Darwin'
   tags: [jenkins, jenkins-configure]
 
 - include: plugins.yml
