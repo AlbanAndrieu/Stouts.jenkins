@@ -29,8 +29,9 @@ for (Config config: configProvider.getAllConfigs()) {
     }
 }
 
-def scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
-def content = new File(scriptDir + '/settings.xml').text
+//def scriptDir = new File(getClass().protectionDomain.codeSource.location.path).parent
+//def content = new File(scriptDir + '/settings.xml').text
+def content = new File('~/settings.xml').text
 
 if (configId) {
     def officialSettingsConfig = configProvider.getConfigById(configId)
