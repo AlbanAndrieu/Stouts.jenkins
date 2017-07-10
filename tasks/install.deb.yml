@@ -1,22 +1,5 @@
 ---
 
-- name: jenkins-install | Ensure Jenkins is stopped
-  service: name=jenkins state=stopped
-  ignore_errors: true
-  become: yes
-
-- name: jenkins-install | Kill connection used by user jenkins
-  action: shell killall -u {{ jenkins_user }} || true
-  changed_when: false
-  become: yes
-  ignore_errors: true
-  when: jenkins_user != jenkins_target_user
-  
-- name: jenkins-install | Create jenkins user
-  user: name={{ jenkins_user }} password={{ jenkins_password }} update_password=always comment="Jenkins user" home={{ jenkins_user_home }} shell={{ jenkins_shell }}
-  become: yes
-  ignore_errors: true
-
 - name: jenkins-install | Add apt key
   apt_key:
     id: "{{ jenkins_apt_key_id }}"
