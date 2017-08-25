@@ -35,6 +35,7 @@
   become_user: "{{ jenkins_user }}"
   become: true
   become_method: '{{ jenkins_become_method }}'
+  ignore_errors: true
 
 - name: nginx reload
   service: name=nginx state=reloaded

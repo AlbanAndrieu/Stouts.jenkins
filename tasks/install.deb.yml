@@ -1,22 +1,5 @@
 ---
 
-- name: jenkins-install | Ensure Jenkins is stopped
-  service: name=jenkins state=stopped
-  ignore_errors: true
-  become: yes
-
-- name: jenkins-install | Kill connection used by user jenkins
-  action: shell killall -u {{ jenkins_user }} || true
-  changed_when: false
-  become: yes
-  ignore_errors: true
-  when: jenkins_user != jenkins_target_user
-
-- name: jenkins-install | Create jenkins user
-  user: name={{ jenkins_user }} password={{ jenkins_password }} update_password=always comment="Jenkins user" home={{ jenkins_home }} shell={{ jenkins_shell }}
-  become: yes
-  ignore_errors: true
-
 - name: jenkins-install | Add apt key
   apt_key:
     id: "{{ jenkins_apt_key_id }}"
@@ -31,6 +14,7 @@
 - name: jenkins-install | Create {{ jenkins_home }}
   file: state=directory mode=0755 path={{ jenkins_home }} owner={{ jenkins_user }} group={{ jenkins_group }}
   become: yes
+  ignore_errors: true  
   when: jenkins_deb_enable
 
 - name: jenkins-install | Test jenkins deb package exists
@@ -40,7 +24,10 @@
   when: jenkins_deb_enable
 
 - name: jenkins-install | Download jenkins deb package
-  action: command wget -q -P {{ jenkins_home }} {{ jenkins_deb_repository }}
+  get_url:
+    url: "{{ jenkins_deb_repository }}"
+    dest: "{{ jenkins_home }}"
+    mode: 0440
   become: yes
   when: jenkins_deb_enable and ( jenkins_dir.stat.exists == False )
 

@@ -1,0 +1,47 @@
+---
+
+- name: jenkins-install | Link to Jenkins Home
+  file:
+    src="{{ jenkins_home_default }}"
+    dest={{ jenkins_home }}
+    state=link
+  become: yes
+  when: ansible_distribution == 'MacOSX'
+
+- name: jenkins-install | Create {{ jenkins_home }}
+  file: state=directory mode=0755 path={{ jenkins_home }} owner={{ jenkins_user }} group={{ jenkins_group }}
+  become: yes
+  ignore_errors: true  
+  when: jenkins_pkg_enable
+
+- name: jenkins-install | Test jenkins pkg package exists
+  stat: path={{ jenkins_home }}/{{ jenkins_pkg_file }}
+  become: yes
+  register: jenkins_dir
+  when: jenkins_pkg_enable
+
+- name: jenkins-install | Download jenkins pkg package
+  get_url:
+    url: "{{ jenkins_pkg_repository }}"
+    dest: "{{ jenkins_home }}"
+    mode: 0440
+  become: yes
+  when: jenkins_pkg_enable and ( jenkins_dir.stat.exists == False )
+
+- name: jenkins-install | Install jenkins
+  action: command installer -pkg {{ jenkins_home }}/{{ jenkins_pkg_file }} -target /
+  become: yes
+  when: jenkins_pkg_enable
+
+# ls -lrta /Library/Application\ Support/Jenkins/
+
+#TODO /usr/share/jenkins is protected on macosx
+- name: jenkins-install | Link to Jenkins extracted Darwin package
+  file:
+    src={{ jenkins_root_default }}
+    dest={{ jenkins_root }}
+    state=link
+  become: yes
+  when: ansible_distribution == 'MacOSX'  
+
+# vim:sw=2

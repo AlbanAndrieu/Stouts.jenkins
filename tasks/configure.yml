@@ -6,6 +6,20 @@
     src: jenkins.j2
   become: yes
   register: jenkins_service_configure
+  when: ansible_os_family != 'Darwin'
+    
+#sudo defaults read /Library/LaunchDaemons/org.jenkins-ci
+- name: jenkins-configure | Configure Jenkins service (prefix)
+  shell: sudo defaults write /Library/LaunchDaemons/org.jenkins-ci prefix {{jenkins_prefix}}
+  become: yes
+  #register: jenkins_service_configure
+  when: ansible_os_family == 'Darwin'
+      
+- name: jenkins-configure | Configure Jenkins service (port)
+  shell: sudo defaults write /Library/LaunchDaemons/org.jenkins-ci httpPort {{jenkins_http_port}}
+  become: yes
+  #register: jenkins_service_configure
+  when: ansible_os_family == 'Darwin'
 
 - name: jenkins-configure | Create home folder
   file:
@@ -56,6 +70,7 @@
 - name: jenkins-configure | Set ownership on all jenkins files
   file: path={{ jenkins_home }} owner={{ jenkins_user }} group={{ jenkins_group }} state=directory recurse=true
   become: yes
+  ignore_errors: true  
   #when: jenkins_service_configure.changed
 
 - name: jenkins-configure | Ensure Jenkins restarted if needed
@@ -84,6 +99,8 @@
   changed_when: False
   #when: jenkins_service_configure.changed and jenkins_restart_enabled
   when: jenkins_restart_enabled
+  #check_mode: no
+  ignore_errors: "{{ ansible_check_mode }}"  
 
 - name: jenkins-configure | Remove Jenkins security init scripts after first startup.
   file:
@@ -104,6 +121,7 @@
   retries: 10
   delay: 10
   when: jenkins_restart_enabled
+  ignore_errors: "{{ ansible_check_mode }}"
 
 - name: jenkins-configure | Copy Groovy files to init.groovy.d (1)
   template:
