@@ -1,8 +1,15 @@
 ---
 language: python
-python: "2.7"
+python:
+  - 2.7
+#  - 3.3
+#  - 3.4
+#  - 3.5
+cache:
+  directories:
+    - $HOME/.cache/pip
 env:
-  - ANSIBLE_VERSION=2.1.0.0
+  - ANSIBLE_VERSION=2.3.1.0
 cache: bundler
 #sudo: false
 sudo: required
@@ -15,7 +22,7 @@ install:
   - sudo pip install ansible==$ANSIBLE_VERSION
 
   # Add ansible.cfg to pick up roles path.
-  - "{ echo '[defaults]'; echo 'roles_path = ../'; } >> ansible.cfg"
+  #- "{ echo '[defaults]'; echo 'roles_path = ../'; } >> ansible.cfg"
 
 script:
   - sudo ansible --version
