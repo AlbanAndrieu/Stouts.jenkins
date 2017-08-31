@@ -9,7 +9,7 @@ jenkins_user_home: "{{ jenkins_home }}"
 # python -c "from passlib.hash import sha512_crypt; import getpass; print sha512_crypt.encrypt(getpass.getpass())"
 #http://docs.ansible.com/faq.html#how-do-i-generate-crypted-passwords-for-the-user-module
 jenkins_password: "$6$rounds=40000$OvRtT6osJP89GLee$/cizemUXDAH.mW1ILNK1NGk64/TYLgfbHPo3LnFZEZaLsXTOXQV/0f9.bghBsCycJ32rC.meBaujNQI7KgRPQ."
-jenkins_group: jenkins
+jenkins_group: jenkins #TODO docker,jenkins
 jenkins_become_method: sudo
 #jenkins_shell: "/bin/false"
 jenkins_shell: "/bin/bash"
@@ -134,6 +134,8 @@ jenkins_swarm_enabled: no # Must be activate when jenkins is created from backup
 jenkins_remote_username: admin # The user used to connect slave using swarm
 jenkins_remote_password: admin # The password used to connect slave using swarm
 jenkins_remote_email: "{{ jenkins_remote_username }}@example.com"
+#TODO we should find the IP of hosts: jenkins-UAT-master for remote_jenkins_delegated_ip
+#jenkins_remote_delegated_ip: '{{ ansible_default_ipv4.address }}'
 jenkins_remote_delegated_ip: 127.0.0.1
 jenkins_remote_email_notifications: "{{ jenkins_remote_email }}"
 jenkins_remote_agent_port: 33224

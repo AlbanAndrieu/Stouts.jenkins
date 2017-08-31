@@ -2,7 +2,7 @@
 
 - name: jenkins restart
   service: name=jenkins state=restarted
-  when: jenkins_restart_enabled
+  when: ansible_os_family != 'Darwin' and jenkins_restart_enabled
   become: yes
 
 - name: configure default users
@@ -39,8 +39,10 @@
 
 - name: nginx reload
   service: name=nginx state=reloaded
+  when: ansible_os_family != 'Darwin'  
   become: yes
 
 - name: apache restart
   service: name=apache2 state=restarted
+  when: ansible_os_family != 'Darwin'   
   become: yes

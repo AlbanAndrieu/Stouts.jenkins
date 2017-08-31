@@ -17,5 +17,13 @@ def instance = Jenkins.getInstance()
     //def strategy = new GlobalMatrixAuthorizationStrategy()
     //strategy.add(Jenkins.ADMINISTER, "admin")
     instance.setAuthorizationStrategy(strategy)
+
     instance.save()
 //}
+
+
+def jenkinsLocationConfiguration = JenkinsLocationConfiguration.get()
+
+jenkinsLocationConfiguration.setAdminAddress("Admin {{jenkins_system_config.admin_email}}")
+
+jenkinsLocationConfiguration.save()

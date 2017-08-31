@@ -62,6 +62,7 @@
   apt:
     name: "{{item}}"
   with_items: "{{jenkins_apt_core_packages}}"
+  become: yes
   when: not jenkins_deb_enable
 
 - name: jenkins-install | Install additional deb packages
