@@ -32,39 +32,6 @@ RUN_STANDALONE={{'true' if jenkins_run_standalone else 'false'}}
 # log location.  this may be a syslog facility.priority
 JENKINS_LOG={{jenkins_log}}
 
-## Type:        integer(1:9)
-## Default:     5
-## ServiceRestart: jenkins
-#
-# Debug level for logs -- the higher the value, the more verbose.
-# 5 is INFO.
-#
-JENKINS_DEBUG_LEVEL="5"
-
-## Type:        yesno
-## Default:     no
-## ServiceRestart: jenkins
-#
-# Whether to enable access logging or not.
-#
-JENKINS_ENABLE_ACCESS_LOG="no"
-
-## Type:        integer
-## Default:     100
-## ServiceRestart: jenkins
-#
-# Maximum number of HTTP worker threads.
-#
-JENKINS_HANDLER_MAX="100"
-
-## Type:        integer
-## Default:     20
-## ServiceRestart: jenkins
-#
-# Maximum number of idle HTTP worker threads.
-#
-JENKINS_HANDLER_IDLE="20"
-
 # OS LIMITS SETUP
 #   comment this out to observe /etc/security/limits.conf
 #   this is on by default because http://github.com/jenkinsci/jenkins/commit/2fb288474e980d0e7ff9c4a3b768874835a3e92e
@@ -88,7 +55,6 @@ MAXOPENFILES={{ jenkins_maxopenfiles }}
 
 # port for HTTP connector (default 8080; disable with -1)
 HTTP_PORT={{jenkins_http_port}}
-HTTP_PORT=-1
 
 # servlet context, important if you want to use apache proxying
 PREFIX={{jenkins_prefix}}

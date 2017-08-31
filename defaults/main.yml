@@ -125,9 +125,9 @@ jenkins_remote_plugin_enabled: yes # Must be activate when plugin are retroived 
 jenkins_remote_user: "{{ jenkins_user }}"
 jenkins_remote_ip: "127.0.0.1"
 jenkins_remote_path: "{{ jenkins_home }}"
-jenkins_remote_backup: "/backup/jenkins/thinBackup/FULL-*/"
+jenkins_remote_thinbackup: "/backup/jenkins/thinBackup"
+jenkins_remote_backup: "{{ jenkins_remote_thinbackup }}/FULL-*/"
 jenkins_remote_ssh_rsa: "~/.ssh/id_rsa.pub" # Set private ssh RSA key for root user (path to local file)
-#jenkins_remote_rsa: "/home/vagrant/.ssh/id_rsa"
 jenkins_remote_rsa: "/home/vagrant/.ssh/id_rsa" # RSA key used when jenkins is created from backup
 jenkins_groovy_enabled: no # Must be activate when jenkins is created from backup
 jenkins_swarm_enabled: no # Must be activate when jenkins is created from backup
