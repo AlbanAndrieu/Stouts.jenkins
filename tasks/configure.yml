@@ -93,6 +93,7 @@
   service:
     name: jenkins
     state: started
+    state: started
   changed_when: False
   become: yes
   when: not jenkins_service_configure.changed
