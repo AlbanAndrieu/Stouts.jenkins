@@ -19,7 +19,7 @@
   tags: [jenkins, jenkins-ssh]
 
 - include: refresh.yml
-  when: ansible_os_family != 'Darwin'  
+  when: not ansible_check_mode and ansible_os_family != 'Darwin'
   tags: [jenkins, jenkins-configure]
 
 - include: configure.yml
