@@ -10,7 +10,6 @@ jenkins_user_home: "{{ jenkins_home }}"
 #http://docs.ansible.com/faq.html#how-do-i-generate-crypted-passwords-for-the-user-module
 jenkins_password: "$6$rounds=40000$OvRtT6osJP89GLee$/cizemUXDAH.mW1ILNK1NGk64/TYLgfbHPo3LnFZEZaLsXTOXQV/0f9.bghBsCycJ32rC.meBaujNQI7KgRPQ."
 jenkins_group: jenkins #TODO docker,jenkins
-jenkins_become_method: sudo
 #jenkins_shell: "/bin/false"
 jenkins_shell: "/bin/bash"
 jenkins_become_method: sudo
