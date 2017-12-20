@@ -8,20 +8,26 @@
   register: jenkins_service_configure
   when: ansible_os_family != 'Darwin'
     
+#sudo defaults write /Library/LaunchDaemons/org.jenkins-ci RunAtLoad -bool NO
+#sudo launchctl unload /Library/LaunchDaemons/org.jenkins-ci.plist
+
 #NOK sudo defaults read /Library/LaunchDaemons/org.jenkins-ci
 #sudo defaults read /Library/Preferences/org.jenkins-ci    
 - name: jenkins-configure | Configure Jenkins service (prefix)
-  shell: sudo defaults write /Library/LaunchDaemons/org.jenkins-ci prefix {{jenkins_prefix}}
+  #shell: defaults write /Library/LaunchDaemons/org.jenkins-ci prefix {{jenkins_prefix}}
+  shell: defaults write /Library/Preferences/org.jenkins-ci prefix {{jenkins_prefix}}
   become: yes
   #register: jenkins_service_configure
   when: ansible_os_family == 'Darwin'
       
 - name: jenkins-configure | Configure Jenkins service (port)
-  shell: sudo defaults write /Library/LaunchDaemons/org.jenkins-ci httpPort {{jenkins_http_port}}
+  #shell: defaults write /Library/LaunchDaemons/org.jenkins-ci httpPort {{jenkins_http_port}}
+  shell: defaults write /Library/Preferences/org.jenkins-ci httpPort {{jenkins_http_port}}
   become: yes
   #register: jenkins_service_configure
   when: ansible_os_family == 'Darwin'
 
+#sudo defaults write /Library/Preferences/org.jenkins-ci heapSize 1024M
 #sudo defaults write /Library/Preferences/org.jenkins-ci httpPort -1
 #TODO sudo defaults write /Library/Preferences/org.jenkins-ci httpsPort 443
 #sudo defaults write /Library/Preferences/org.jenkins-ci httpsPort 8383
