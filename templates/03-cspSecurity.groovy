@@ -1,3 +1,5 @@
+#!/usr/bin/groovy
+import hudson.security.*
 import hudson.model.*;
 import jenkins.model.*;
 
