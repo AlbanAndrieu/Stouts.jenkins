@@ -90,6 +90,13 @@ jenkins_prefix: "/"
 jenkins_run_standalone: yes
 jenkins_war: "{{ jenkins_root }}/jenkins.war"
 
+jenkins_connection_delay: 20
+jenkins_connection_retries: 12
+
+jenkins_admin_username: admin
+jenkins_admin_password: admin
+jenkins_admin_password_file: ""
+
 # System config
 # =============
 jenkins_system_config:
@@ -117,18 +124,55 @@ jenkins_check_jobs:                         # Checking jobs during a provision
 jenkins_restart_enabled: true # Must be deactivate when script is tested with Jenkins
 
 jenkins_remote_enabled: no # Must be activate when jenkins is created from backup
+jenkins_remote_plugin_enabled: yes # Must be activate when plugin are retroived from remote jenkins (Otherwise groovy script can take plugins from thinBackup installedPlugins.xml)
 jenkins_remote_user: "{{ jenkins_user }}"
 jenkins_remote_ip: "127.0.0.1"
 jenkins_remote_path: "{{ jenkins_home }}"
-jenkins_remote_backup: "/backup/jenkins/thinBackup/FULL-*/"
+jenkins_remote_thinbackup: "/backup/jenkins/thinBackup"
+jenkins_remote_backup: "{{ jenkins_remote_thinbackup }}/FULL-*/"
+jenkins_remote_ssh_rsa: "~/.ssh/id_rsa.pub" # Set private ssh RSA key for root user (path to local file)
 jenkins_remote_rsa: "/home/vagrant/.ssh/id_rsa" # RSA key used when jenkins is created from backup
 jenkins_groovy_enabled: no # Must be activate when jenkins is created from backup
 jenkins_swarm_enabled: no # Must be activate when jenkins is created from backup
 jenkins_swarm_user: "nobody" # The user used to connect slave using swarm
+jenkins_remote_username: admin # The user used to connect slave using swarm
+jenkins_remote_password: admin # The password used to connect slave using swarm
+jenkins_remote_email: "{{ jenkins_remote_username }}@example.com"
+#TODO we should find the IP of hosts: jenkins-UAT-master for remote_jenkins_delegated_ip
+#jenkins_remote_delegated_ip: '{{ ansible_default_ipv4.address }}'
 jenkins_remote_delegated_ip: 127.0.0.1
+jenkins_remote_email_notifications: "{{ jenkins_remote_email }}"
+jenkins_remote_agent_port: 33224
+jenkins_remote_sonar_name: "sonar"
+jenkins_remote_sonar_server_old: "localhost"
+jenkins_remote_sonar_url_old: "http://{{ jenkins_remote_sonar_server_old }}"
+jenkins_remote_sonar_server_new: "localhost"
+jenkins_remote_sonar_url_new: "http://{{ jenkins_remote_sonar_server_new }}"
+jenkins_remote_sonar_jdbc: "jdbc:mysql://{{ jenkins_remote_sonar_server_new }}:3306/sonar"
+jenkins_remote_active_directory_credentials: "ac-credentials.json"
+jenkins_remote_stash_name: ""
+jenkins_remote_stash_server: "localhost"
+jenkins_remote_stash_url: "https://{{ jenkins_remote_stash_server }}"
+jenkins_remote_nexus_server_old: "localhost"
+jenkins_remote_nexus_url_old: "http://{{ jenkins_remote_nexus_server_old }}"
+jenkins_remote_nexus_server_new: "localhost"
+jenkins_remote_nexus_url_new: "http://{{ jenkins_remote_nexus_server_new }}"
+jenkins_remote_homemade_snapshot_url: "http://{{ jenkins_remote_nexus_server_new }}/maven/content/repositories/homemade-snapshot/"
+jenkins_remote_installed_plugin: "installedPlugins.xml" # From thinbackup
+jenkins_remote_xvbf_name: "default"
+
+jenkins_target_user: "{{ jenkins_user }}" #Switch to vagrant for virtualbox test boxes
+jenkins_target_group: "{{ jenkins_group }}" #Switch to vagrant for virtualbox test boxes
+jenkins_target_home: "/home/{{jenkins_target_user}}"
+
+jenkins_crowd_enabled: false
+
+docker_users: "{{ jenkins_user }}"
 
 docker_files_generated_directory: "./"
 docker_files_enable: no
 docker_volume_directory                  : "{{ jenkins_home }}"
 docker_working_directory                 : "/home/vagrant"
 docker_image_name                        : "nabla/ansible-jenkins-master"
+
+# vim:sw=2

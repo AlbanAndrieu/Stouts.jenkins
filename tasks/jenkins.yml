@@ -12,6 +12,15 @@
   register: jenkins_image
   notify: jenkins restart
 
+- include: refresh.yml
+  when: not ansible_check_mode and ansible_os_family != 'Darwin'
+  tags: [jenkins, jenkins-configure]
+
+- include: configure.yml
+  become: true
+#  when: ansible_os_family != 'Darwin'
+  tags: [jenkins, jenkins-configure]
+
 - name: Rebuild Jenkins
   docker_image:
     path: "{{jenkins_home}}"
