@@ -1,41 +1,10 @@
 ---
 
 - name: jenkins restart
-  service: name=jenkins state=restarted
-  when: ansible_os_family != 'Darwin' and jenkins_restart_enabled
-  become: yes
-
-- name: configure default users
-  template:
-    src: 01-basicSecurity.groovy
-    dest: "{{ jenkins_home }}/init.groovy.d/01-basicSecurity.groovy"
-  register: jenkins_users_config
-
-- name: jenkins check web ready
-  wait_for: host="{{ jenkins_http_host }}" port="{{ jenkins_http_port }}" timeout=30
-
-- name: jenkins check cli ready
-  shell: curl --head --silent {{ jenkins_url }}/cli/
-  retries: "{{ jenkins_connection_retries }}"
-  delay: "{{ jenkins_connection_delay }}"
-  until: (result.stdout.find("403 Forbidden") != -1) or (result.stdout.find("200 OK") != -1) and (result.stdout.find("Please wait while") == -1)
-  register: result
-  changed_when: False
-
-- name: jenkins update jobs
-  command: "{{ jenkins_home }}/jobs/job.sh {{ item.item.name }}"
-  become_user: "{{ jenkins_user }}"
-  become: true
-  become_method: '{{ jenkins_become_method }}'
-  when: item.changed
-  with_items: "{{ jenkins_jobs_changed.results }}"
-
-- name: jenkins reload configuration
-  command: java -jar {{ jenkins_home }}/jenkins-cli.jar {{ jenkins_cli_extra_opts }} -s {{ jenkins_url }} reload-configuration
-  become_user: "{{ jenkins_user }}"
-  become: true
-  become_method: '{{ jenkins_become_method }}'
-  ignore_errors: true
+  docker_container:
+    name: jenkins
+    state: started
+    restart: true
 
 - name: nginx reload
   service: name=nginx state=reloaded

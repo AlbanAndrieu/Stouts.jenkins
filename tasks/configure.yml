@@ -1,197 +1,131 @@
 ---
 
-- name: jenkins-configure | Configure Jenkins Service
-  template:
-    dest: "{{ jenkins_configuration }}"
-    src: jenkins.j2
-  become: yes
-  register: jenkins_service_configure
-  when: ansible_os_family != 'Darwin'
-    
-#sudo defaults write /Library/LaunchDaemons/org.jenkins-ci RunAtLoad -bool NO
-#sudo launchctl unload /Library/LaunchDaemons/org.jenkins-ci.plist
-
-#NOK sudo defaults read /Library/LaunchDaemons/org.jenkins-ci
-#sudo defaults read /Library/Preferences/org.jenkins-ci    
-- name: jenkins-configure | Configure Jenkins service (prefix)
-  #shell: defaults write /Library/LaunchDaemons/org.jenkins-ci prefix {{jenkins_prefix}}
-  shell: defaults write /Library/Preferences/org.jenkins-ci prefix {{jenkins_prefix}}
-  become: yes
-  #register: jenkins_service_configure
-  when: ansible_os_family == 'Darwin'
-      
-- name: jenkins-configure | Configure Jenkins service (port)
-  #shell: defaults write /Library/LaunchDaemons/org.jenkins-ci httpPort {{jenkins_http_port}}
-  shell: defaults write /Library/Preferences/org.jenkins-ci httpPort {{jenkins_http_port}}
-  become: yes
-  #register: jenkins_service_configure
-  when: ansible_os_family == 'Darwin'
-
-#sudo defaults write /Library/Preferences/org.jenkins-ci heapSize 1024M
-#sudo defaults write /Library/Preferences/org.jenkins-ci httpPort -1
-#TODO sudo defaults write /Library/Preferences/org.jenkins-ci httpsPort 443
-#sudo defaults write /Library/Preferences/org.jenkins-ci httpsPort 8383
-#sudo defaults write /Library/Preferences/org.jenkins-ci httpsKeyStore /etc/ssl/almonde-jenkins.misys.global.ad/almonde-jenkins.misys.global.ad.jks
-#sudo defaults write /Library/Preferences/org.jenkins-ci httpsKeyStorePassword changeit
+- name: jenkins-configure | Ensure Jenkins is stopped
+  service: name=jenkins state=stopped
+  sudo: yes
 
 - name: jenkins-configure | Create home folder
-  file:
-    mode: 0755
-    owner: "{{ jenkins_user }}"
-    path: "{{ jenkins_home }}"
-    state: directory
-  become: yes
-  ignore_errors: true
+  file: state=directory path={{ jenkins_home }} mode=0755 owner={{ jenkins_user }}
+  sudo: yes
+  ignore_errors: True
 
-- name: jenkins-configure | Create custom init scripts directory.
-  file:
-    path: "{{ jenkins_home }}/init.groovy.d"
-    state: directory
-    owner: jenkins
-    group: jenkins
-    mode: 0775
-  become: yes
+- name: jenkins-configure | Create {{ jenkins_home }} with full rights for vagrant
+  file: state=directory mode=0777 path={{ jenkins_home }} owner=vagrant group=vagrant
+  sudo: yes
+  when: jenkins_remote_enabled
 
-#- name: jenkins-configure | Enable groovy scripts
-#  shell: sed -i "s;<permission>hudson.model.Hudson.RunScripts:{{ jenkins_remote_username }}</permission>;<permission>hudson.model.Hudson.RunScripts:anonymous</permission>;g" {{ jenkins_home }}/config.xml
-#  when: jenkins_remote_enabled
-#
-#- name: jenkins-configure | Enable swarm connect for anonymous
-#  shell: sed -i "s;<permission>hudson.model.Computer.Connect:{{ jenkins_remote_username }}</permission>;<permission>hudson.model.Computer.Connect:anonymous</permission>;g" {{ jenkins_home }}/config.xml
-#  when: jenkins_remote_enabled and jenkins_swarm_enabled
-#
-#- name: jenkins-configure | Enable swarm create for anonymous
-#  shell: sed -i "s;<permission>hudson.model.Computer.Create:{{ jenkins_remote_username }}</permission>;<permission>hudson.model.Computer.Create:anonymous</permission>;g" {{ jenkins_home }}/config.xml
-#  when: jenkins_remote_enabled and jenkins_swarm_enabled
+- name: jenkins-configure | Change permission.
+  file: path={{jenkins_home}} owner=vagrant group=vagrant recurse=yes
+  sudo: yes
+  when: jenkins_remote_enabled
 
-#See https://wiki.jenkins-ci.org/display/JENKINS/Disable+security
-- name: jenkins-configure | Disable security (In case Crowd is enabled) step 1
-  shell: sed -i "s;<useSecurity>true</useSecurity>;<useSecurity>false</useSecurity>;g" {{ jenkins_home }}/config.xml
+- name: jenkins-configure | Configure Jenkins service
+  template: src=jenkins.j2 dest={{jenkins_configuration}}
+  sudo: yes
+  register: jenkins_service_configure
+
+- name: jenkins-configure | Add Jenkins key for remote access
+  authorized_key: user=vagrant key="{{ lookup('file', "../vagrant/keys/" + "mgr.jenkins.pub") }}"
+  delegate_to: "{{ remote_jenkins_delegated_ip }}"
+#  become: yes
+
+- name: jenkins-configure | Restore configuration from backup
+  #synchronize: mode=pull src={{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_backup }} dest="{{ jenkins_home }}/" rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--compress
+  command: rsync -lptgoD --rsh='ssh -i {{ jenkins_remote_rsa }}' {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_backup }}/* {{ jenkins_home }}/
+  delegate_to: "{{ remote_jenkins_delegated_ip }}"
+#TODO try become
+#  become: true
+#  become_method: sudo
+#  become_user: jenkins
   #when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled and not jenkins_crowd_enabled
+  when: jenkins_remote_enabled
 
-- name: jenkins-configure | Disable security (In case Crowd is enabled) step 2
-  shell: sed -i "s;<securityRealm class=\"de.theit.jenkins.crowd.CrowdSecurityRealm\";<\!--<securityRealm class=\"de.theit.jenkins.crowd.CrowdSecurityRealm\";g" {{ jenkins_home }}/config.xml
+- name: jenkins-configure | Restore users from master
+  #synchronize: mode=pull src="{{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/users/" dest={{ jenkins_home }}/users/ rsync_opts=--rsh='ssh -i {{ jenkins_remote_rsa }}',--recursive,--compress
+  command: rsync -a --rsh='ssh -i {{ jenkins_remote_rsa }}' {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/users/ {{ jenkins_home }}/users/
+  delegate_to: "{{ remote_jenkins_delegated_ip }}"
   #when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled and not jenkins_crowd_enabled
+  when: jenkins_remote_enabled
 
-- name: jenkins-configure | Disable security (In case Crowd is enabled) step 3
-  shell: sed -i "s;</securityRealm>;</securityRealm>-->;g" {{ jenkins_home }}/config.xml
+- name: jenkins-configure | Restore jobs from master
+  command: rsync -a --exclude 'builds' --rsh='ssh -i {{ jenkins_remote_rsa }}' {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:{{ jenkins_remote_path }}/jobs/ /jenkins/jobs/
+  delegate_to: "{{ remote_jenkins_delegated_ip }}"
   #when: jenkins_service_configure.changed
-  when: jenkins_remote_enabled and not jenkins_crowd_enabled
+  when: jenkins_remote_enabled
+
+- name: jenkins-configure | Restore userContent from master
+  command: rsync -a --rsh='ssh -i {{ jenkins_remote_rsa }}' {{ jenkins_remote_user }}@{{ jenkins_remote_ip }}:/jenkins/userContent/ /jenkins/userContent/
+  delegate_to: "{{ remote_jenkins_delegated_ip }}"
+  #when: jenkins_service_configure.changed
+  when: jenkins_remote_enabled
+
+- name: jenkins-configure | Enable groovy scripts
+  shell: sed -i "s;<permission>hudson.model.Hudson.RunScripts:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Hudson.RunScripts:anonymous</permission>;g" {{ jenkins_home }}/config.xml
+  #when: jenkins_service_configure.changed
+  when: jenkins_remote_enabled
+
+- name: jenkins-configure | Enable swarm connect for anonymous
+  shell: sed -i "s;<permission>hudson.model.Computer.Connect:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Computer.Connect:anonymous</permission>;g" {{ jenkins_home }}/config.xml
+  #when: jenkins_service_configure.changed
+  when: jenkins_remote_enabled and jenkins_swarm_enabled
+
+- name: jenkins-configure | Enable swarm create for anonymous
+  shell: sed -i "s;<permission>hudson.model.Computer.Create:{{ jenkins_swarm_user }}</permission>;<permission>hudson.model.Computer.Create:anonymous</permission>;g" {{ jenkins_home }}/config.xml
+  #when: jenkins_service_configure.changed
+  when: jenkins_remote_enabled and jenkins_swarm_enabled
 
 - name: jenkins-configure | Set ownership on all jenkins files
   file: path={{ jenkins_home }} owner={{ jenkins_user }} group={{ jenkins_group }} state=directory recurse=true
-  become: yes
-  ignore_errors: true  
+  sudo: yes
   #when: jenkins_service_configure.changed
 
-- name: jenkins-configure | Ensure Jenkins restarted if needed
-  service:
-    name: jenkins
-    state: restarted
+- name: jenkins-configure | Ensure Jenkins restarted
+  service: name=jenkins state=restarted
   changed_when: False
-  become: yes
+  sudo: yes
   #when: jenkins_service_configure.changed and jenkins_restart_enabled
   when: jenkins_restart_enabled
-
-- name: jenkins-configure | Ensure Jenkins running
-  service:
-    name: jenkins
-    state: started
-  changed_when: False
-  become: yes
-  when: not jenkins_service_configure.changed
-  
-#- name: jenkins-configure | Create {{ jenkins_home }} with full rights for vagrant
-#  file: state=directory mode=0777 path={{ jenkins_home }} owner=vagrant group=vagrant
-#  become: yes
-#  when: jenkins_remote_enabled
-
-#- name: jenkins-configure | Change permission for vagrant
-#  file: path={{jenkins_home}} owner=vagrant group=vagrant recurse=yes
-#  become: yes
-#  when: jenkins_remote_enabled
 
 - name: jenkins-configure | Wait untils Jenkins web API is available
-  shell: curl --head --silent {{ jenkins_url }}/cli/
-  until: (result.stdout.find("403 Forbidden") != -1) or (result.stdout.find("200 OK") != -1) and (result.stdout.find("Please wait while") == -1)
-  retries: "{{ jenkins_connection_retries }}"
-  delay: "{{ jenkins_connection_delay }}"
+  shell: curl --head --silent http://{{ jenkins_http_host }}:{{ jenkins_http_port }}{{ jenkins_prefix }}/cli/
+  delay: 20
+  retries: 12
+  until: result.stdout.find("200 OK") != -1
   register: result
   changed_when: False
-  #when: jenkins_service_configure.changed and jenkins_restart_enabled
-  when: jenkins_restart_enabled
-  #check_mode: no
-  ignore_errors: "{{ ansible_check_mode }}"  
-
-- name: jenkins-configure | Remove Jenkins security init scripts after first startup.
-  file:
-    path: "{{ item }}"
-    state: absent
-  with_items:
-    - "{{ jenkins_home }}/init.groovy.d/01-basicSecurity.groovy"
-    - "{{ jenkins_home }}/init.groovy.d/10-deleteAllNodes.groovy"
-    - "{{ jenkins_home }}/init.groovy.d/11-disableAllJobs.groovy"
-    - "{{ jenkins_home }}/init.groovy.d/30-restorePlugins.groovy"
-  become: yes
+  when: jenkins_service_configure.changed and jenkins_restart_enabled
 
 - name: jenkins-configure | Copy jenkins-cli
-  get_url: url={{ jenkins_url }}/jnlpJars/jenkins-cli.jar dest={{ jenkins_home }}/jenkins-cli.jar
+  get_url: url=http://{{ jenkins_http_host }}:{{ jenkins_http_port }}{{ jenkins_prefix }}/jnlpJars/jenkins-cli.jar dest={{ jenkins_home }}/jenkins-cli.jar
   register: jenkins_cli
   until: "'OK' in jenkins_cli.msg or 'file already exists' in jenkins_cli.msg"
-  become: yes
+  sudo: yes
   retries: 10
   delay: 10
   when: jenkins_restart_enabled
-  ignore_errors: "{{ ansible_check_mode }}"
 
-- name: jenkins-configure | Copy Groovy files to init.groovy.d (1)
-  template:
-    src: "{{ item.src }}"
-    dest: "{{ item.dest }}"
+- name: jenkins-configure | Copy Groovy file to disable jobs
+  copy: src=./files/DisableAllJobs.groovy dest={{ jenkins_home }}/DisableAllJobs.groovy owner=vagrant group=vagrant mode=0644
+  sudo: yes
+
+- name: jenkins-configure | Copy Groovy files to remove nodes
+  copy: src=./files/RemoveAllNodes.groovy dest={{ jenkins_home }}/RemoveAllNodes.groovy owner=vagrant group=vagrant mode=0644
+  sudo: yes
+
+- name: jenkins-configure | Run groovy scripts
+  shell: java -jar {{ jenkins_home }}/jenkins-cli.jar -s http://{{jenkins_http_host}}:{{ jenkins_http_port }}{{ jenkins_prefix }} -i {{ jenkins_remote_rsa }} groovy {{ item }}
+  sudo: yes
   with_items:
-    - { src: '01-basicSecurity.groovy', dest: '{{ jenkins_home }}/init.groovy.d/01-basicSecurity.groovy' }
-#    - { src: '10-deleteAllNodes.groovy', dest: '{{ jenkins_home }}/init.groovy.d/10-deleteAllNodes.groovy' }
-#    - { src: '11-disableAllJobs.groovy', dest: '{{ jenkins_home }}/init.groovy.d/11-disableAllJobs.groovy' }
-    - { src: '13-changeAllJobsEmailNotifications.groovy', dest: '{{ jenkins_home }}/init.groovy.d/13-changeAllJobsEmailNotifications.groovy' }
-    - { src: '15-wipeoutWorkspace.groovy', dest: '{{ jenkins_home }}/init.groovy.d/15-wipeoutWorkspace.groovy' }
-    - { src: '20-tcpSlaveAgentPort.groovy', dest: '{{ jenkins_home }}/init.groovy.d/20-tcpSlaveAgentPort.groovy' }
-    - { src: '30-restorePlugins.groovy', dest: '{{ jenkins_home }}/init.groovy.d/30-restorePlugins.groovy-TODO' }
-    - { src: '40-EnableTimestamperPluginOnAllJobs.groovy', dest: '{{ jenkins_home }}/init.groovy.d/40-EnableTimestamperPluginOnAllJobs.groovy' }
-    - { src: '41-RemoveAllDisabledModulesInMavenJobs.groovy', dest: '{{ jenkins_home }}/init.groovy.d/41-RemoveAllDisabledModulesInMavenJobs.groovy' }
-    - { src: '42-PreselectUsernameInMavenReleaseBuild.groovy', dest: '{{ jenkins_home }}/init.groovy.d/42-PreselectUsernameInMavenReleaseBuild.groovy' }
-    - { src: '50-changeNexus.groovy', dest: '{{ jenkins_home }}/init.groovy.d/50-changeNexus.groovy' }
-    - { src: '51-changeSonar.groovy', dest: '{{ jenkins_home }}/init.groovy.d/51-changeSonar.groovy' }
-#    - { src: '52-changeJenkinsCredentials.groovy', dest: '{{ jenkins_home }}/init.groovy.d/52-changeJenkinsCredentials.groovy' }
-#    - { src: '53-changeJDKInstaller.groovy', dest: '{{ jenkins_home }}/init.groovy.d/53-changeJDKInstaller.groovy' }
-#    - { src: '54-addActiveDirectoryJenkinsCredentials.groovy', dest: '{{ jenkins_home }}/init.groovy.d/54-addActiveDirectoryJenkinsCredentials.groovy' }
-    - { src: '56-changeXvfb.groovy', dest: '{{ jenkins_home }}/init.groovy.d/56-changeXvfb.groovy' }
-    - { src: '60-changeMavenJobs.groovy', dest: '{{ jenkins_home }}/init.groovy.d/60-changeMavenJobs.groovy' }
-    - { src: '80-addSwarmUser.groovy', dest: '{{ jenkins_home }}/init.groovy.d/80-addSwarmUser.groovy' }
-  become: yes
-
-- name: jenkins-configure | Copy Groovy files to init.groovy.d (2)
-  copy: src={{ item }} dest={{ jenkins_home }}/init.groovy.d/ owner={{ jenkins_user }} group={{ jenkins_group }} mode=0644
-  with_fileglob:
-    - "*.groovy"
-  become: yes
-
-#- name: jenkins-configure | Run groovy scripts
-#  # -i {{ jenkins_remote_rsa }}
-#  shell: java -jar {{ jenkins_home }}/jenkins-cli.jar -s {{ jenkins_url }} groovy {{ item }}
-#  become: yes
-#  with_items:
-#    - "{{ jenkins_home }}/init.groovy.d/11-disableAllJobs.groovy"
-##    - "{{ jenkins_home }}/init.groovy.d/10-deleteAllNodes.groovy"
-#  when: jenkins_groovy_enabled and jenkins_restart_enabled
+    - ./files/DisableAllJobs.groovy
+    - ./files/RemoveAllNodes.groovy
+  when: jenkins_groovy_enabled and jenkins_restart_enabled
 
 - name: jenkins-configure | Configure Jenkins System
-  template: src=jenkins_system_config.xml.j2 dest={{ jenkins_home }}/jenkins.model.JenkinsLocationConfiguration.xml owner={{ jenkins_user }} group={{ jenkins_group }} force=yes
-  become: yes
-  notify: jenkins reload configuration
+  template: src=jenkins_system_config.xml.j2 dest={{jenkins_home}}/jenkins.model.JenkinsLocationConfiguration.xml owner={{ jenkins_user }} group={{ jenkins_group }} force=yes
+  sudo: yes
+  notify: [jenkins reload configuration]
 
 - name: jenkins-configure | Configure log rotation
   template: src=logrotate.conf.j2 dest=/etc/logrotate.d/jenkins.conf
-  become: yes
+  sudo: yes
   when: jenkins_logrotate

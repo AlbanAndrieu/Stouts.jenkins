@@ -14,6 +14,7 @@ cache: bundler
 #sudo: false
 sudo: required
 dist: trusty
+
 before_install:
   - sudo apt-get update -qq
   - sudo apt-get install -qq python-apt python-pycurl
@@ -28,19 +29,19 @@ script:
   - sudo ansible --version
 
   # Prepare tests
-  #- echo localhost > hosts
+  - echo localhost > inventory
 
   # Check syntax
-  - sudo ansible-playbook --syntax-check -i hosts test.yml
+  - ansible-playbook --syntax-check -i inventory test.yml
 
   # First run
-  - sudo ansible-playbook -i hosts test.yml --connection=local --sudo
+  - ansible-playbook -i inventory test.yml --connection=local --sudo
 
   # Second run Idempotence test
-#  - >
-#    sudo ansible-playbook -i hosts test.yml --connection=local --sudo
-#    | grep -q 'changed=0.*failed=0'
-#    && (echo 'Idempotence test: pass' && exit 0)
-#    || (echo 'Idempotence test: fail' && exit 1)
+  - >
+    ansible-playbook -i inventory test.yml --connection=local --sudo
+    | grep -q 'changed=0.*failed=0'
+    && (echo 'Idempotence test: pass' && exit 0)
+    || (echo 'Idempotence test: fail' && exit 1)
 
   - sudo /etc/init.d/jenkins status || exit 1

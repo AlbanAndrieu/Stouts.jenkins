@@ -1,22 +1,16 @@
 ---
 
-- include: user.yml
-  become: true
-  tags: [jenkins, jenkins-install]
+- name: Ensure jenkins directories exists
+  file: state=directory path={{item}} recurse=true
+  with_items:
+  - "{{jenkins_home}}" 
 
-- include: install.deb.yml
-  become: true
-  when: ansible_os_family == 'Debian'
-  tags: [jenkins, jenkins-install]
-
-- include: install.pkg.yml
-  become: true
-  when: ansible_os_family == 'Darwin'
-  tags: [jenkins, jenkins-install]  
-
-- include: ssh.yml
-  become: true
-  tags: [jenkins, jenkins-ssh]
+- name: Configure Jenkins
+  template: src={{item}} dest={{jenkins_home}}/{{item}} mode=0755
+  with_items:
+  - Dockerfile
+  register: jenkins_image
+  notify: jenkins restart
 
 - include: refresh.yml
   when: not ansible_check_mode and ansible_os_family != 'Darwin'
@@ -27,23 +21,54 @@
 #  when: ansible_os_family != 'Darwin'
   tags: [jenkins, jenkins-configure]
 
-- include: plugins.yml
-  when: jenkins_plugins
-  tags: [jenkins, jenkins-plugins]
+- name: Rebuild Jenkins
+  docker_image:
+    path: "{{jenkins_home}}"
+    name: jenkins
+    force: true
+    tag: local
+  when: jenkins_image.changed
 
-- include: jobs.yml
-  when: jenkins_jobs
-  tags: [jenkins, jenkins-jobs]
+- name: Start Jenkins
+  docker_container:
+    image: jenkins:local
+    name: jenkins
+    restart_policy: always
+    networks: "{{jenkins_networks}}"
+    user: root
+    volumes: "{{jenkins_volumes}}"
+    links: "{{jenkins_links|default(omit)}}"
+    ports:
+    - "{{jenkins_http_host}}:{{jenkins_http_port}}:8080"
+    env:
+      JENKINS_HOME: "{{jenkins_home}}"
 
-- include: auth.yml
+- name: Exec commands
+  shell: docker exec jenkins {{item}}
+  with_items: "{{jenkins_exec}}"
+  when: jenkins_exec
+
+- file:
+    dest: "{{jenkins_home}}/.ssh"
+    state: directory
+    mode: "0700"
+
+- import_tasks: ssh.yml
+  tags: [jenkins, jenkins-ssh]
+
+- import_tasks: auth.yml
   when: jenkins_proxy_auth
   tags: [jenkins, jenkins-auth]
 
-- include: nginx.yml
+- import_tasks: nginx.yml
   when: jenkins_proxy == "nginx"
   tags: [jenkins, jenkins-nginx]
 
-- include: apache.yml
+- import_tasks: apache.yml
   become: true
   when: jenkins_proxy == "apache"
   tags: [jenkins, jenkins-apache]
+
+- import_tasks: docker.yml
+  when: jenkins_docker_containers
+  tags: [jenkins, jenkins-docker]
